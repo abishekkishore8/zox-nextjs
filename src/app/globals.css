@@ -1,26 +1,340 @@
-@import "tailwindcss";
+/* Font Awesome for theme icons */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css");
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Zox News theme - import original theme styles */
+@import "./styles/style.css";
+@import "./styles/media-queries.css";
+
+/* Minimal overrides - theme handles body/layout */
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Mobile: prevent horizontal scroll, smooth touch scrolling */
+#mvp-site {
+  overflow-x: hidden;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (max-width: 767px) {
+  html {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* You may like: pink banner + 2x3 grid (structure is ul > li > a) */
+#mvp-related-posts h4.mvp-widget-home-title {
+  margin-bottom: 24px;
+}
+#mvp-related-posts h4.mvp-widget-home-title span.mvp-widget-home-title {
+  background: #c41e3a;
+  color: #fff;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+#mvp-related-posts ul.mvp-related-posts-list {
+  display: block;
+  overflow: hidden;
+}
+#mvp-related-posts ul.mvp-related-posts-list li {
+  margin-left: 2.5%;
+  width: 31.66%;
+  height: auto;
+  margin-bottom: 24px;
+}
+#mvp-related-posts ul.mvp-related-posts-list li:nth-child(3n+1) {
+  margin-left: 0;
+  clear: left;
+}
+#mvp-related-posts .mvp-related-img {
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  display: block;
+}
+#mvp-related-posts .mvp-related-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#mvp-related-posts .mvp-related-text p {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* You May Like: mobile view – single column, thumb + headline row, stylized header */
+@media screen and (max-width: 767px) {
+  #mvp-related-posts h4.mvp-widget-home-title {
+    text-align: center;
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ddd;
+  }
+  #mvp-related-posts h4.mvp-widget-home-title::before,
+  #mvp-related-posts h4.mvp-widget-home-title::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 999px;
+    height: 1px;
+    background: #ddd;
+  }
+  #mvp-related-posts h4.mvp-widget-home-title::before {
+    right: 100%;
+    margin-right: 12px;
+  }
+  #mvp-related-posts h4.mvp-widget-home-title::after {
+    left: 100%;
+    margin-left: 12px;
+  }
+  #mvp-related-posts h4.mvp-widget-home-title span.mvp-widget-home-title {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    -webkit-clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  #mvp-related-posts ul.mvp-related-posts-list {
+    display: block;
+  }
+  #mvp-related-posts ul.mvp-related-posts-list li {
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 20px;
+    clear: both;
+    float: none;
+    height: auto;
+  }
+  #mvp-related-posts ul.mvp-related-posts-list li:nth-child(3n+1) {
+    margin-left: 0;
+  }
+  #mvp-related-posts ul.mvp-related-posts-list li a {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+  }
+  #mvp-related-posts .mvp-related-img {
+    width: 80px;
+    min-width: 80px;
+    height: 80px;
+    aspect-ratio: 1;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  #mvp-related-posts .mvp-related-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  #mvp-related-posts .mvp-related-text {
+    flex: 1;
+    min-width: 0;
+  }
+  #mvp-related-posts .mvp-related-text p {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Mobile: fix image visibility - always show mob-img (keep theme image background colors) */
+@media screen and (max-width: 767px) {
+  .mvp-mob-img {
+    display: block !important;
+  }
+  .mvp-reg-img {
+    display: none !important;
+  }
+  .mvp-blog-story-wrap:nth-child(5n+0) .mvp-mob-img,
+  .mvp-blog-story-wrap:nth-child(5n) .mvp-mob-img {
+    display: block !important;
+  }
+  .mvp-blog-story-wrap:nth-child(5n+0) .mvp-big-img,
+  .mvp-blog-story-wrap:nth-child(5n) .mvp-big-img {
+    display: none !important;
+  }
+}
+
+/* Mobile: dynamic containers - remove fixed heights so content sizes naturally */
+@media screen and (max-width: 767px) {
+  .mvp-feat1-feat-img,
+  .mvp-feat1-feat-wrap {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .mvp-feat1-feat-img img {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  .mvp-feat1-sub-img,
+  .mvp-feat1-sub-cont {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  .mvp-feat1-sub-img img {
+    min-width: 0 !important;
+  }
+  .mvp-feat1-pop-cont {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .mvp-blog-story-img,
+  .mvp-blog-story-out,
+  .mvp-blog-story-in,
+  .mvp-blog-story-wrap {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  .mvp-blog-story-col,
+  ul.mvp-blog-story-list-col .mvp-blog-story-col {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .mvp-blog-story-img img {
+    height: auto !important;
+  }
+  .mvp-widget-feat1-feat-img,
+  .mvp-widget-feat1-bot-img,
+  .mvp-widget-feat1-top-img,
+  .mvp-feat1-list-img,
+  #mvp-home-widget-wrap .mvp-flex-story-img {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  .mvp-widget-feat1-feat-img img,
+  .mvp-widget-feat1-bot-img img,
+  .mvp-feat1-list-img img {
+    height: auto !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Prevent Entertainment and other widget sections from overlapping content above */
+#mvp-feat1-wrap {
+  overflow: hidden;
+  clear: both;
+}
+#mvp-home-widget-wrap {
+  overflow: hidden;
+  clear: both;
+}
+.mvp-widget-home {
+  clear: both !important;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* Desktop: restore Entertainment/Business (feat2) layout - no overflow on pull layout */
+@media screen and (min-width: 768px) {
+  .mvp-widget-feat2-out,
+  .mvp-widget-feat2-in {
+    overflow: visible;
+  }
+  .mvp-widget-feat2-main {
+    overflow: hidden;
+  }
+  /* Entertainment: 1 big left, 2 cards right — left column float left */
+  .mvp-widget-feat2-left {
+    float: left;
+  }
+  /* Business: 2 cards left, 1 big right — left-alt stays float: right (theme) so big is on right */
+  .mvp-widget-feat2-left-alt {
+    float: right;
+  }
+  .mvp-widget-feat2-right {
+    float: left;
+  }
+  .mvp-widget-feat2-left-cont {
+    overflow: hidden;
+    position: relative;
+  }
+  .mvp-widget-feat2-right-cont {
+    margin-bottom: 20px;
+  }
+  .mvp-widget-feat2-right-cont:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .mvp-widget-feat2-out,
+  .mvp-widget-feat2-in {
+    margin-right: 0 !important;
+  }
+  .mvp-widget-feat2-left,
+  .mvp-widget-feat2-left-alt,
+  .mvp-widget-feat2-right {
+    float: none !important;
+    display: block;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .mvp-widget-feat2-right {
+    margin-top: 20px;
+  }
+}
+
+/* Spacing: Business/Entertainment sidebar news list */
+.mvp-widget-feat2-side-list .mvp-feat1-list-cont {
+  margin-top: 22px;
+}
+.mvp-widget-feat2-side-list .mvp-feat1-list a:first-child .mvp-feat1-list-cont {
+  margin-top: 0;
+}
+.mvp-widget-feat2-side-list .mvp-feat1-list-text {
+  padding-top: 2px;
+}
+.mvp-widget-feat2-side-list .mvp-feat1-list-text h2 {
+  line-height: 1.3;
+  margin-bottom: 0;
+  margin-top: 4px;
+}
+.mvp-widget-feat2-side-list .mvp-cat-date-wrap {
+  margin-bottom: 4px;
+}
+.mvp-widget-feat2-side-ad {
+  margin-bottom: 24px;
+}
+
+/* More News load-more button: match theme link style */
+button.mvp-inf-more-but {
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 3px;
+  color: #000 !important;
+  cursor: pointer;
+  display: inline-block;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 15px 0;
+  text-align: center;
+  text-transform: uppercase;
+  width: 70%;
+}
+button.mvp-inf-more-but:hover {
+  background: #000;
+  color: #fff !important;
 }

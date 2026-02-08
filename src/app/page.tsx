@@ -1,65 +1,312 @@
+import Link from "next/link";
 import Image from "next/image";
+import {
+  getFeat1LeftPosts,
+  getTrendingPosts,
+  getFeat1ListPosts,
+  getMoreNewsPosts,
+  getCategorySectionPosts,
+  getDarkSectionPosts,
+  getFeat1SectionPosts,
+} from "@/lib/data";
+import { Feat1Tabs } from "@/components/Feat1Tabs";
+import { HomeWidgetSection } from "@/components/HomeWidgetSection";
+import { HomeDarkSection } from "@/components/HomeDarkSection";
+import { HomeFeat1Section } from "@/components/HomeFeat1Section";
+import { Sidebar } from "@/components/Sidebar";
+import { MoreNewsSection } from "@/components/MoreNewsSection";
 
-export default function Home() {
+function Feat1ListPost({ post }: { post: { id: string; slug: string; title: string; category: string; timeAgo: string; imageSmall?: string; image: string } }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+    <Link href={`/post/${post.slug}`} rel="bookmark">
+      <div className="mvp-feat1-list-cont left relative">
+        <div className="mvp-feat1-list-out relative">
+          <div className="mvp-feat1-list-img left relative">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src={post.imageSmall || post.image}
+              alt={post.title}
+              width={80}
+              height={80}
+              className="mvp-reg-img"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <Image
+              src={post.imageSmall || post.image}
+              alt={post.title}
+              width={80}
+              height={80}
+              className="mvp-mob-img"
+            />
+          </div>
+          <div className="mvp-feat1-list-in">
+            <div className="mvp-feat1-list-text">
+              <div className="mvp-cat-date-wrap left relative">
+                <span className="mvp-cd-cat left relative">{post.category}</span>
+                <span className="mvp-cd-date left relative">{post.timeAgo}</span>
+              </div>
+              <h2>{post.title}</h2>
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </Link>
+  );
+}
+
+export default function HomePage() {
+  const { main, sub } = getFeat1LeftPosts();
+  const trending = getTrendingPosts();
+  const featExclude = [main.id, sub[0].id, sub[1].id];
+  const latestList = getFeat1ListPosts(featExclude);
+  const moreNews = getMoreNewsPosts([main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]);
+
+  const entertainmentSection = getCategorySectionPosts("entertainment");
+  const videosDarkSection = getDarkSectionPosts("sports");
+  const businessSection = getCategorySectionPosts("business");
+  const techFeat1Section = getFeat1SectionPosts("tech");
+
+  return (
+    <>
+      {/* Featured Section - Layout 1 (like https://mvpthemes.com/zoxnews/) */}
+      <div className="mvp-main-box">
+        <section id="mvp-feat1-wrap" className="left relative">
+          <div className="mvp-feat1-right-out left relative">
+            <div className="mvp-feat1-right-in">
+              <div className="mvp-feat1-main left relative">
+                {/* Left column: 1 big featured + 2 sub */}
+                <div className="mvp-feat1-left-wrap relative">
+                  <Link href={`/post/${main.slug}`} rel="bookmark">
+                    <div className="mvp-feat1-feat-wrap left relative">
+                      <div className="mvp-feat1-feat-img left relative" style={{ position: "relative" }}>
+                        <Image
+                          src={main.image}
+                          alt={main.title}
+                          fill
+                          className="mvp-reg-img"
+                          sizes="(max-width: 768px) 100vw, 560px"
+                          style={{ objectFit: "cover" }}
+                        />
+                        <Image
+                          src={main.imageSmall || main.image}
+                          alt={main.title}
+                          className="mvp-mob-img"
+                          width={330}
+                          height={200}
+                          style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div className="mvp-feat1-feat-text left relative">
+                        <div className="mvp-cat-date-wrap left relative">
+                          <span className="mvp-cd-cat left relative">{main.category}</span>
+                          <span className="mvp-cd-date left relative">{main.timeAgo}</span>
+                        </div>
+                        <h2 className="mvp-stand-title">{main.title}</h2>
+                        <p>{main.excerpt}</p>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="mvp-feat1-sub-wrap left relative">
+                    <Link href={`/post/${sub[0].slug}`} rel="bookmark">
+                      <div className="mvp-feat1-sub-cont left relative">
+                        <div className="mvp-feat1-sub-img left relative">
+                          <Image
+                            src={sub[0].image}
+                            alt={sub[0].title}
+                            width={590}
+                            height={354}
+                            className="mvp-reg-img"
+                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                          />
+                          <Image
+                            src={sub[0].imageSmall || sub[0].image}
+                            alt={sub[0].title}
+                            width={330}
+                            height={200}
+                            className="mvp-mob-img"
+                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                          />
+                        </div>
+                        <div className="mvp-feat1-sub-text">
+                          <div className="mvp-cat-date-wrap left relative">
+                            <span className="mvp-cd-cat left relative">{sub[0].category}</span>
+                            <span className="mvp-cd-date left relative">{sub[0].timeAgo}</span>
+                          </div>
+                          <h2>{sub[0].title}</h2>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href={`/post/${sub[1].slug}`} rel="bookmark">
+                      <div className="mvp-feat1-sub-cont left relative">
+                        <div className="mvp-feat1-sub-img left relative">
+                          <Image
+                            src={sub[1].image}
+                            alt={sub[1].title}
+                            width={590}
+                            height={354}
+                            className="mvp-reg-img"
+                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                          />
+                          <Image
+                            src={sub[1].imageSmall || sub[1].image}
+                            alt={sub[1].title}
+                            width={330}
+                            height={200}
+                            className="mvp-mob-img"
+                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                          />
+                        </div>
+                        <div className="mvp-feat1-sub-text">
+                          <div className="mvp-cat-date-wrap left relative">
+                            <span className="mvp-cd-cat left relative">{sub[1].category}</span>
+                            <span className="mvp-cd-date left relative">{sub[1].timeAgo}</span>
+                          </div>
+                          <h2>{sub[1].title}</h2>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+                {/* Middle column: Trending */}
+                <div className="mvp-feat1-mid-wrap left relative">
+                  <h3 className="mvp-feat1-pop-head">
+                    <span className="mvp-feat1-pop-head">Trending</span>
+                  </h3>
+                  <div className="mvp-feat1-pop-wrap left relative">
+                    {trending.map((post) => (
+                      <Link key={post.id} href={`/post/${post.slug}`} rel="bookmark">
+                        <div className="mvp-feat1-pop-cont left relative">
+                          <div className="mvp-feat1-pop-img left relative">
+                            <Image
+                              src={post.imageSmall || post.image}
+                              alt={post.title}
+                              width={400}
+                              height={240}
+                              className="mvp-reg-img"
+                              style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                            />
+                            <Image
+                              src={post.imageSmall || post.image}
+                              alt={post.title}
+                              width={330}
+                              height={200}
+                              className="mvp-mob-img"
+                              style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                            />
+                          </div>
+                          <div className="mvp-feat1-pop-text left relative">
+                            <div className="mvp-cat-date-wrap left relative">
+                              <span className="mvp-cd-cat left relative">{post.category}</span>
+                              <span className="mvp-cd-date left relative">{post.timeAgo}</span>
+                            </div>
+                            <h2>{post.title}</h2>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Right column: Ad + Latest / Videos / Galleries tabs */}
+            <div className="mvp-feat1-right-wrap left relative">
+              <div className="mvp-feat1-list-ad left relative">
+                <span className="mvp-ad-label">Advertisement</span>
+                <div style={{ background: "#f0f0f0", padding: "20px", textAlign: "center", minHeight: 250 }}>
+                  Ad placeholder
+                </div>
+              </div>
+              <div className="mvp-feat1-list-wrap left relative">
+                <div className="mvp-feat1-list-head-wrap left relative">
+                  <ul className="mvp-feat1-list-buts left relative">
+                    <li className="mvp-feat-col-tab">
+                      <a href="#mvp-feat-tab-col1">
+                        <span className="mvp-feat1-list-but">Latest</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#mvp-feat-tab-col2">
+                        <span className="mvp-feat1-list-but">Videos</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#mvp-feat-tab-col3">
+                        <span className="mvp-feat1-list-but">Galleries</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+                <Feat1Tabs />
+                <div id="mvp-feat-tab-col1" className="mvp-feat1-list left relative mvp-tab-col-cont">
+                  {latestList.map((post) => (
+                    <Feat1ListPost key={post.id} post={post} />
+                  ))}
+                </div>
+                <div id="mvp-feat-tab-col2" className="mvp-feat1-list left relative mvp-tab-col-cont">
+                  {latestList.slice(0, 5).map((post) => (
+                    <Feat1ListPost key={`v-${post.id}`} post={post} />
+                  ))}
+                </div>
+                <div id="mvp-feat-tab-col3" className="mvp-feat1-list left relative mvp-tab-col-cont">
+                  {latestList.slice(5, 10).map((post) => (
+                    <Feat1ListPost key={`g-${post.id}`} post={post} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Homepage widget sections: Entertainment (Feat2), Videos (Dark), Business (Feat2), Tech (Feat1) */}
+      <div id="mvp-home-widget-wrap" className="left relative">
+        <HomeWidgetSection
+          title="Entertainment"
+          categorySlug="entertainment"
+          featured={entertainmentSection.featured}
+          right={entertainmentSection.right}
+          list={entertainmentSection.list}
+        />
+        <HomeDarkSection
+          title="Videos"
+          featured={videosDarkSection.featured}
+          list={videosDarkSection.list}
+        />
+        <HomeWidgetSection
+          title="Business"
+          categorySlug="business"
+          featured={businessSection.featured}
+          right={businessSection.right}
+          list={businessSection.list}
+          mainpos="middle"
+        />
+        <HomeFeat1Section
+          title="Tech"
+          top={techFeat1Section.top}
+          bottom={techFeat1Section.bottom}
+        />
+      </div>
+
+      {/* More News */}
+      <div className="mvp-main-blog-wrap left relative">
+        <div className="mvp-main-box">
+          <div className="mvp-main-blog-cont left relative">
+            <div className="mvp-widget-home-head">
+              <h4 className="mvp-widget-home-title">
+                <span className="mvp-widget-home-title">More News</span>
+              </h4>
+            </div>
+            <div className="mvp-main-blog-out left relative">
+              <div className="mvp-main-blog-in">
+                <div className="mvp-main-blog-body left relative">
+                  <MoreNewsSection posts={moreNews} />
+                </div>
+              </div>
+              <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
+                <Sidebar excludeIds={[main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

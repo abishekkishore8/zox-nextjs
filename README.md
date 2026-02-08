@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zox News – Next.js Theme
 
-## Getting Started
+This is a Next.js port of the **Zox News** WordPress theme (v3.17.1). It keeps the same layout, styling, and behavior as the original theme, including responsive and mobile behavior.
 
-First, run the development server:
+## What’s included
+
+- **Layout**: Same structure as the theme – header (top bar + nav), fly-out menu, search overlay, footer.
+- **Styles**: Original `style.css` and `media-queries.css` from the theme for desktop and mobile.
+- **Home**: Featured hero + 4 cards, then “More News” list with sidebar area.
+- **News**: Full blog listing at `/news`.
+- **Single post**: Article page at `/post/[slug]` with featured image and content.
+- **Search**: Search overlay (icon in header) and results at `/search?q=...`.
+- **Interactions**: Fly-out menu (hamburger), search toggle, back-to-top button.
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/` – App Router pages (home, news, post, search).
+- `src/app/styles/` – Theme CSS (`style.css`, `media-queries.css`).
+- `src/components/` – Header, Footer, FlyMenu, SearchOverlay, ThemeScript.
+- `src/lib/` – Site config and mock post data.
+- `public/images/logos/` – Theme logo images.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Data
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Posts and config are in `src/lib/data.ts` and `src/lib/config.ts`. Replace with your CMS or API when you connect a backend.
 
-## Deploy on Vercel
+## Responsive / mobile
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The theme’s media queries are included, so:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Desktop**: Full header with logo, social, menu, search.
+- **Mobile**: Compact nav, hamburger opens the fly-out menu (same as the original theme).
+
+Breakpoints and layout follow the original Zox News theme.
