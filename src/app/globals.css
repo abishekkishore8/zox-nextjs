@@ -22,6 +22,629 @@ body {
   }
 }
 
+/* Navbar: always show (theme hides it on mobile when top bar exists; we removed top bar so keep navbar visible) */
+#mvp-main-nav-bot {
+  display: block !important;
+  height: auto !important;
+}
+
+/* Hamburger / fly menu button: reset so it looks like theme div */
+button.mvp-fly-but-wrap {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  display: block;
+  position: relative;
+  width: 24px;
+  height: 20px;
+}
+
+/* Hamburger button spans - create hamburger icon */
+button.mvp-fly-but-wrap span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #333;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+button.mvp-fly-but-wrap span:nth-child(1) {
+  top: 0;
+}
+
+button.mvp-fly-but-wrap span:nth-child(2),
+button.mvp-fly-but-wrap span:nth-child(3) {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+button.mvp-fly-but-wrap span:nth-child(4) {
+  bottom: 0;
+}
+
+/* Hamburger hover */
+button.mvp-fly-but-wrap:hover span {
+  background: #e91e63;
+}
+
+/* Transform to X when menu is open */
+button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(1),
+button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(4) {
+  opacity: 0;
+}
+
+button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(2) {
+  transform: translateY(-50%) rotate(45deg);
+}
+
+button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+/* StartupNews navbar: single row, white bar, logo, black links, search on the right */
+.startupnews-nav #mvp-main-nav-bot {
+  background: #fff !important;
+  border-bottom: 1px solid #eee;
+  height: auto !important;
+  min-height: 56px;
+}
+.startupnews-nav #mvp-main-nav-bot-cont {
+  height: auto !important;
+  min-height: 56px;
+}
+/* One flex row: [hamburger + logo + menu] | [search] - override theme floats and 50px column */
+.startupnews-nav-inner {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+.startupnews-nav-inner .mvp-nav-bot-right-out {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 0 !important;
+  width: auto !important;
+  float: none !important;
+}
+.startupnews-nav-inner .mvp-nav-bot-right-in {
+  margin-right: 0 !important;
+}
+.startupnews-nav-inner .mvp-nav-bot-cont {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.startupnews-nav-inner .mvp-nav-bot-left-out {
+  flex: 1 1 auto;
+  min-width: 0;
+  float: none !important;
+  margin-left: 0 !important;
+  width: auto !important;
+  display: flex;
+  align-items: center;
+}
+.startupnews-nav-inner .mvp-nav-bot-left-in {
+  margin-left: 0 !important;
+}
+.startupnews-nav-inner .mvp-nav-bot-left {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+.startupnews-nav-inner .mvp-nav-bot-right {
+  width: auto !important;
+  height: auto !important;
+  flex-shrink: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+}
+.startupnews-nav-left {
+  display: flex !important;
+  align-items: center;
+  gap: 20px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.startupnews-logo-link {
+  display: block;
+  flex-shrink: 0;
+}
+.startupnews-logo {
+  height: 38px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
+}
+.startupnews-menu ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.startupnews-menu ul li a {
+  color: #111 !important;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+.startupnews-dropdown-arrow {
+  font-size: 0.6em;
+  margin-left: 4px;
+  opacity: 0.8;
+  vertical-align: middle;
+}
+/* Search bar: inline in navbar, rounded input + circular pink button */
+.startupnews-search-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.startupnews-search {
+  display: inline-flex;
+  align-items: stretch;
+  height: 40px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 20px 20px 20px 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.startupnews-search-input {
+  padding: 0 14px 0 16px;
+  border: none;
+  border-radius: 0;
+  font-size: 0.9rem;
+  width: 160px;
+  min-width: 120px;
+  outline: none;
+  height: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  color: #111;
+}
+.startupnews-search-input::placeholder {
+  color: #888;
+}
+.startupnews-search-btn {
+  width: 38px;
+  height: 38px;
+  margin: 1px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: #e91e63;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+.startupnews-search-btn:hover {
+  background: #c2185b;
+}
+.startupnews-search-btn i {
+  font-size: 0.9rem;
+}
+@media (max-width: 1023px) {
+  .startupnews-menu { display: none !important; }
+  .startupnews-nav-left { flex: 0 1 auto; }
+}
+@media (max-width: 767px) {
+  .startupnews-logo { height: 32px; max-width: 160px; }
+  .startupnews-search { height: 36px; }
+  .startupnews-search-input { width: 100px; min-width: 80px; padding: 0 10px 0 12px; }
+  .startupnews-search-btn { width: 34px; height: 34px; margin: 1px; font-size: 0.85rem; }
+}
+
+/* ========================================
+   CLEAN WHITE FLY-OUT MENU DESIGN
+   ======================================== */
+
+/* Main Menu Container - Clean white background */
+#mvp-fly-wrap.startupnews-fly {
+  background: #ffffff !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: -2px 0 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Section - Logo and Close Button */
+#mvp-fly-wrap.startupnews-fly #mvp-fly-menu-top {
+  position: relative;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 24px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#mvp-fly-wrap.startupnews-fly #mvp-fly-logo {
+  margin: 0 !important;
+  width: auto;
+  text-align: left;
+  padding-right: 60px;
+}
+
+.startupnews-fly-logo-img {
+  height: 40px !important;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+.startupnews-fly-logo-img:hover {
+  opacity: 0.8;
+}
+
+/* Close Button - Clean modern design with proper X */
+.startupnews-fly-close {
+  position: absolute !important;
+  top: 20px !important;
+  right: 20px !important;
+  left: auto;
+  margin: 0 !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 8px;
+  background: #f8f8f8 !important;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-close:hover {
+  background: #e91e63 !important;
+  transform: rotate(90deg);
+}
+
+.startupnews-fly-close span {
+  background: #333 !important;
+  width: 20px !important;
+  height: 2px !important;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-close:hover span {
+  background: #ffffff !important;
+}
+
+/* Ensure X icon is always visible in close button */
+.startupnews-fly-close span:nth-child(1),
+.startupnews-fly-close span:nth-child(4) {
+  opacity: 0 !important;
+}
+
+.startupnews-fly-close span:nth-child(2) {
+  transform: translateY(-50%) rotate(45deg) !important;
+}
+
+.startupnews-fly-close span:nth-child(3) {
+  transform: translateY(-50%) rotate(-45deg) !important;
+}
+
+/* Navigation Menu Wrapper - Scrollable */
+#mvp-fly-wrap.startupnews-fly #mvp-fly-menu-wrap {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  height: auto !important;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 0 140px;
+}
+
+/* Custom Scrollbar */
+#mvp-fly-wrap.startupnews-fly #mvp-fly-menu-wrap::-webkit-scrollbar {
+  width: 4px;
+}
+
+#mvp-fly-wrap.startupnews-fly #mvp-fly-menu-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#mvp-fly-wrap.startupnews-fly #mvp-fly-menu-wrap::-webkit-scrollbar-thumb {
+  background: #e91e63;
+  border-radius: 10px;
+}
+
+#mvp-fly-wrap.startupnews-fly #mvp-fly-menu-wrap::-webkit-scrollbar-thumb:hover {
+  background: #c2185b;
+}
+
+/* Navigation */
+#mvp-fly-wrap.startupnews-fly .startupnews-fly-nav {
+  position: relative !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.startupnews-fly-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  float: none;
+  width: 100%;
+}
+
+/* Menu Items - Clean design with subtle hover */
+.startupnews-fly-nav .startupnews-fly-item {
+  border-top: none;
+  float: none;
+  margin: 4px 16px;
+  cursor: default;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-nav .startupnews-fly-item:hover {
+  background: #fafafa;
+}
+
+.startupnews-fly-nav .startupnews-fly-item:first-child {
+  margin-top: 4px;
+}
+
+/* Section Divider - Clean separator */
+.startupnews-fly-nav .startupnews-fly-item.startupnews-fly-divider {
+  margin-top: 20px;
+  padding-top: 20px;
+  position: relative;
+}
+
+.startupnews-fly-nav .startupnews-fly-item.startupnews-fly-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #e0e0e0 20%, #e0e0e0 80%, transparent 100%);
+}
+
+.startupnews-fly-nav .startupnews-fly-expandable {
+  border-top: none;
+  padding: 0;
+  margin: 4px 16px;
+}
+
+/* Menu Links - Clean typography */
+.startupnews-fly-nav .startupnews-fly-label {
+  color: #1a1a1a !important;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  display: block;
+  padding: 14px 20px;
+  float: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.startupnews-fly-nav .startupnews-fly-label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: #e91e63;
+  border-radius: 0 2px 2px 0;
+  transition: height 0.3s ease;
+}
+
+.startupnews-fly-nav .startupnews-fly-label:hover {
+  color: #e91e63 !important;
+  padding-left: 24px;
+}
+
+.startupnews-fly-nav .startupnews-fly-label:hover::before {
+  height: 24px;
+}
+
+/* Row for expandable items */
+.startupnews-fly-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: none !important;
+  margin: 0;
+  padding: 0;
+}
+
+.startupnews-fly-row .startupnews-fly-label {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  margin: 0;
+}
+
+/* Toggle Button - Clean design */
+.startupnews-fly-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 14px 0 0;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-toggle:hover {
+  background: #ffe5ee;
+}
+
+.startupnews-fly-toggle.active {
+  background: #e91e63;
+}
+
+.startupnews-fly-toggle i {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-toggle:hover i {
+  color: #e91e63;
+}
+
+.startupnews-fly-toggle.active i {
+  color: #ffffff;
+}
+
+/* Submenu - Clean nested design */
+.startupnews-fly-sub {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 4px 0 8px 0 !important;
+  background: #f9f9f9;
+  border-top: 1px solid #f0f0f0 !important;
+  border-bottom: none !important;
+  float: none !important;
+  width: auto !important;
+}
+
+.startupnews-fly-sub li {
+  border: none !important;
+  margin: 0 !important;
+  float: none !important;
+}
+
+.startupnews-fly-sub li a {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 8px 36px !important;
+  color: #555 !important;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  border: none !important;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.startupnews-fly-sub li a::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background: #e91e63;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-sub li a:hover {
+  color: #e91e63 !important;
+  padding-left: 40px !important;
+  background: rgba(233, 30, 99, 0.05);
+}
+
+.startupnews-fly-sub li a:hover::before {
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 8px rgba(233, 30, 99, 0.6);
+}
+
+/* Social Footer - Clean design */
+#mvp-fly-wrap.startupnews-fly #mvp-fly-soc-wrap.startupnews-fly-soc {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 28px 24px !important;
+  background: #fafafa !important;
+  border-top: 1px solid #f0f0f0 !important;
+}
+
+.startupnews-fly-soc-head {
+  display: block !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  color: #999 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px !important;
+  text-align: center;
+}
+
+.startupnews-fly-soc .mvp-fly-soc-list {
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.startupnews-fly-soc .mvp-fly-soc-list li {
+  display: inline-block;
+  margin: 0;
+}
+
+.startupnews-fly-soc .mvp-fly-soc-list li a {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  color: #666 !important;
+  font-size: 1rem !important;
+  transition: all 0.3s ease;
+}
+
+.startupnews-fly-soc .mvp-fly-soc-list li a:hover {
+  background: #e91e63 !important;
+  border-color: #e91e63 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+}
+
 /* You may like: pink banner + 2x3 grid (structure is ul > li > a) */
 #mvp-related-posts h4.mvp-widget-home-title {
   margin-bottom: 24px;

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { FlyMenu } from "@/components/FlyMenu";
+import { FlyMenuProvider } from "@/components/FlyMenuContext";
+import { FlyMenuFade } from "@/components/FlyMenuFade";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchOverlay } from "@/components/SearchOverlay";
@@ -28,23 +30,25 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <FlyMenu />
-        <div id="mvp-site" className="left relative">
-          <SearchOverlay />
-          <div id="mvp-site-wall" className="left relative">
-            <div id="mvp-site-main" className="left relative">
-              <Header />
-              <div id="mvp-main-body-wrap" className="left relative">
-                {children}
+        <FlyMenuProvider>
+          <FlyMenu />
+          <div id="mvp-site" className="left relative">
+            <SearchOverlay />
+            <div id="mvp-site-wall" className="left relative">
+              <div id="mvp-site-main" className="left relative">
+                <Header />
+                <div id="mvp-main-body-wrap" className="left relative">
+                  {children}
+                </div>
+                <Footer />
               </div>
-              <Footer />
             </div>
           </div>
-        </div>
-        <div className="mvp-fly-top back-to-top">
-          <i className="fa fa-angle-up fa-3"></i>
-        </div>
-        <div className="mvp-fly-fade mvp-fly-but-click"></div>
+          <div className="mvp-fly-top back-to-top">
+            <i className="fa fa-angle-up fa-3"></i>
+          </div>
+          <FlyMenuFade />
+        </FlyMenuProvider>
         <ThemeScript />
       </body>
     </html>

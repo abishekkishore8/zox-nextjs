@@ -1,85 +1,167 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { siteConfig } from "@/lib/config";
+import { useFlyMenu } from "@/components/FlyMenuContext";
+
+type FlyMenuItem = {
+  id?: string;
+  label: string;
+  href?: string;
+  children?: { label: string; href: string }[];
+  dividerBefore?: boolean;
+};
+
+function isExpandable(item: FlyMenuItem): item is FlyMenuItem & { id: string; children: { label: string; href: string }[] } {
+  return "id" in item && Array.isArray(item.children) && item.children.length > 0;
+}
 
 export function FlyMenu() {
+  const { toggle } = useFlyMenu();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const flyMenu = siteConfig.flyMenu as FlyMenuItem[];
+
   return (
-    <div id="mvp-fly-wrap">
-      <div id="mvp-fly-menu-top" className="left relative">
-        <div className="mvp-fly-top-out left relative">
+    <div id="mvp-fly-wrap" className="startupnews-fly">
+      <div id="mvp-fly-menu-top">
+        <div className="mvp-fly-top-out">
           <div className="mvp-fly-top-in">
-            <div id="mvp-fly-logo" className="left relative">
-              <Link href="/">
+            <div id="mvp-fly-logo">
+              <Link href="/" onClick={toggle}>
                 <Image
                   src={siteConfig.logoNav}
                   alt={siteConfig.name}
                   width={200}
-                  height={30}
-                  data-rjs="2"
+                  height={42}
+                  className="startupnews-fly-logo-img"
+                  priority
                 />
               </Link>
             </div>
           </div>
-          <div className="mvp-fly-but-wrap mvp-fly-but-menu mvp-fly-but-click">
+          <button
+            type="button"
+            className="mvp-fly-but-wrap mvp-fly-but-menu mvp-fly-but-click startupnews-fly-close"
+            onClick={toggle}
+            aria-label="Close menu"
+          >
             <span></span>
             <span></span>
             <span></span>
             <span></span>
-          </div>
+          </button>
         </div>
       </div>
+
       <div id="mvp-fly-menu-wrap">
-        <nav className="mvp-fly-nav-menu left relative">
+        <nav className="mvp-fly-nav-menu startupnews-fly-nav">
           <ul>
-            {siteConfig.menu.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href}>{item.label}</Link>
-              </li>
-            ))}
+            {flyMenu.map((item) => {
+              if (isExpandable(item)) {
+                const isOpen = expandedId === item.id;
+                return (
+                  <li key={item.id} className={`startupnews-fly-item startupnews-fly-expandable${item.dividerBefore ? ' startupnews-fly-divider' : ''}`}>
+                    <div className="startupnews-fly-row">
+                      <Link
+                        href={item.href ?? "#"}
+                        onClick={toggle}
+                        className="startupnews-fly-label"
+                      >
+                        {item.label}
+                      </Link>
+                      <button
+                        type="button"
+                        className={`startupnews-fly-toggle${isOpen ? ' active' : ''}`}
+                        onClick={() => setExpandedId(isOpen ? null : item.id)}
+                        aria-expanded={isOpen}
+                        aria-label={isOpen ? "Collapse" : "Expand"}
+                      >
+                        <i className={`fa ${isOpen ? 'fa-minus' : 'fa-plus'}`} aria-hidden="true"></i>
+                      </button>
+                    </div>
+                    {isOpen && (
+                      <ul className="startupnews-fly-sub">
+                        {item.children.map((sub) => (
+                          <li key={sub.href}>
+                            <Link
+                              href={sub.href}
+                              onClick={toggle}
+                            >
+                              {sub.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
+              return (
+                <li
+                  key={item.label}
+                  className={`startupnews-fly-item${item.dividerBefore ? " startupnews-fly-divider" : ""}`}
+                >
+                  <Link
+                    href={item.href ?? "#"}
+                    onClick={toggle}
+                    className="startupnews-fly-label"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </div>
-      <div id="mvp-fly-soc-wrap">
-        <span className="mvp-fly-soc-head">Connect with us</span>
-        <ul className="mvp-fly-soc-list left relative">
+
+      <div id="mvp-fly-soc-wrap" className="startupnews-fly-soc">
+        <span className="mvp-fly-soc-head startupnews-fly-soc-head">CONNECT WITH US</span>
+        <ul className="mvp-fly-soc-list">
           {siteConfig.social.facebook && (
             <li>
-              <a href={siteConfig.social.facebook} target="_blank" rel="noopener noreferrer" className="fab fa-facebook-f"></a>
+              <a
+                href={siteConfig.social.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fab fa-facebook-f"
+                aria-label="Facebook"
+              ></a>
             </li>
           )}
           {siteConfig.social.twitter && (
             <li>
-              <a href={siteConfig.social.twitter} target="_blank" rel="noopener noreferrer" className="fa-brands fa-x-twitter"></a>
-            </li>
-          )}
-          {siteConfig.social.pinterest && (
-            <li>
-              <a href={siteConfig.social.pinterest} target="_blank" rel="noopener noreferrer" className="fab fa-pinterest-p"></a>
+              <a
+                href={siteConfig.social.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fa-brands fa-x-twitter"
+                aria-label="Twitter"
+              ></a>
             </li>
           )}
           {siteConfig.social.instagram && (
             <li>
-              <a href={siteConfig.social.instagram} target="_blank" rel="noopener noreferrer" className="fab fa-instagram"></a>
-            </li>
-          )}
-          {siteConfig.social.tiktok && (
-            <li>
-              <a href={siteConfig.social.tiktok} target="_blank" rel="noopener noreferrer" className="fab fa-tiktok"></a>
-            </li>
-          )}
-          {siteConfig.social.youtube && (
-            <li>
-              <a href={siteConfig.social.youtube} target="_blank" rel="noopener noreferrer" className="fab fa-youtube"></a>
+              <a
+                href={siteConfig.social.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fab fa-instagram"
+                aria-label="Instagram"
+              ></a>
             </li>
           )}
           {siteConfig.social.linkedin && (
             <li>
-              <a href={siteConfig.social.linkedin} target="_blank" rel="noopener noreferrer" className="fab fa-linkedin"></a>
-            </li>
-          )}
-          {siteConfig.social.tumblr && (
-            <li>
-              <a href={siteConfig.social.tumblr} target="_blank" rel="noopener noreferrer" className="fab fa-tumblr"></a>
+              <a
+                href={siteConfig.social.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fab fa-linkedin-in"
+                aria-label="LinkedIn"
+              ></a>
             </li>
           )}
         </ul>
