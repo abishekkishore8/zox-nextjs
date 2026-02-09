@@ -7,6 +7,8 @@ import {
   getCategorySectionPosts,
   getDarkSectionPosts,
   getFeat1SectionPosts,
+  getPostsByCategory,
+  startupEvents,
 } from "@/lib/data";
 import { HomeWidgetSection } from "@/components/HomeWidgetSection";
 import { HomeDarkSection } from "@/components/HomeDarkSection";
@@ -14,6 +16,7 @@ import { HomeFeat1Section } from "@/components/HomeFeat1Section";
 import { MoreNewsSection } from "@/components/MoreNewsSection";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 import { StickySidebarContent } from "@/components/StickySidebarContent";
+import { EventCard } from "@/components/EventCard";
 
 export default function HomePage() {
   const { main, sub } = getFeat1LeftPosts();
@@ -25,10 +28,562 @@ export default function HomePage() {
   const businessSection = getCategorySectionPosts("business");
   const techFeat1Section = getFeat1SectionPosts("tech");
 
+  // Combine posts for mobile "Latest News" section
+  const latestNewsPosts = [main, sub[0], sub[1], ...trending, ...moreNews.slice(0, 15)];
+
+  // Get AI & DeepTech category posts for mobile section (6 total: 2 featured + 4 regular)
+  const aiDeepTechPosts = getPostsByCategory("tech", 6);
+  const aiDeepTechFeatured1 = aiDeepTechPosts[0] || null;
+  const aiDeepTechFeatured2 = aiDeepTechPosts[1] || null;
+  const aiDeepTechList = aiDeepTechPosts.slice(2, 6);
+
+  // Get Fintech category posts for mobile section (6 total: 2 featured + 4 regular)
+  const fintechPosts = getPostsByCategory("fintech", 6);
+  const fintechFeatured1 = fintechPosts[0] || null;
+  const fintechFeatured2 = fintechPosts[1] || null;
+  const fintechList = fintechPosts.slice(2, 6);
+
+  // Get Social Media category posts for mobile section (6 total: 2 featured + 4 regular)
+  const socialMediaPosts = getPostsByCategory("social-media", 6);
+  const socialMediaFeatured1 = socialMediaPosts[0] || null;
+  const socialMediaFeatured2 = socialMediaPosts[1] || null;
+  const socialMediaList = socialMediaPosts.slice(2, 6);
+
+  // Get EV & Mobility category posts for mobile section (6 total: 2 featured + 4 regular)
+  const evMobilityPosts = getPostsByCategory("ev-mobility", 6);
+  const evMobilityFeatured1 = evMobilityPosts[0] || null;
+  const evMobilityFeatured2 = evMobilityPosts[1] || null;
+  const evMobilityList = evMobilityPosts.slice(2, 6);
+
   return (
     <>
-      {/* Featured Section - Layout 1 (like https://mvpthemes.com/zoxnews/) */}
-      <div className="mvp-main-box">
+      {/* Mobile-only: Featured Article + Latest News Section */}
+      <section className="startupnews-mobile-latest-news">
+        {/* Latest News Title - Below Navbar */}
+        <h2 className="startupnews-mobile-section-title">Latest News</h2>
+
+        {/* Featured Article at Top */}
+        <div className="startupnews-mobile-featured">
+          <Link href={`/post/${main.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+            <div className="startupnews-mobile-featured-image">
+              <Image
+                src={main.image}
+                alt={main.title}
+                fill
+                className="mvp-reg-img"
+                sizes="100vw"
+                style={{ objectFit: "cover" }}
+                priority
+              />
+              <Image
+                src={main.imageSmall || main.image}
+                alt={main.title}
+                className="mvp-mob-img"
+                width={400}
+                height={300}
+                style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                priority
+              />
+            </div>
+            <div className="startupnews-mobile-featured-content">
+              <div className="startupnews-mobile-featured-meta">
+                <span className="startupnews-mobile-featured-category">{main.category}</span>
+                <span className="startupnews-mobile-featured-time">{main.timeAgo}</span>
+              </div>
+              <h1 className="startupnews-mobile-featured-title">{main.title}</h1>
+            </div>
+          </Link>
+        </div>
+
+         {/* Latest News Article Cards */}
+         <div className="mvp-main-box">
+           <ul className="startupnews-articles-list">
+             {latestNewsPosts.slice(1, 7).map((post) => (
+              <li key={post.id} className="startupnews-article-card">
+                <Link href={`/post/${post.slug}`} rel="bookmark">
+                  <div className="startupnews-article-content">
+                    <div className="startupnews-article-meta">
+                      <span className="startupnews-category">{post.category}</span>
+                      <span className="startupnews-date">{post.timeAgo}</span>
+                    </div>
+                    <h2 className="startupnews-article-title">{post.title}</h2>
+                    <p className="startupnews-article-excerpt">{post.excerpt}</p>
+                  </div>
+                  <div className="startupnews-article-image">
+                    <Image
+                      src={post.imageSmall || post.image}
+                      alt={post.title}
+                      width={400}
+                      height={240}
+                      style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                    />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Mobile-only: Most Popular Section */}
+      <section className="startupnews-mobile-most-popular">
+        <div className="mvp-main-box">
+          <h2 className="startupnews-mobile-popular-title">Trending</h2>
+          <ul className="startupnews-popular-list">
+            {trending.slice(0, 5).map((post, index) => (
+              <li key={post.id} className="startupnews-popular-card">
+                <Link href={`/post/${post.slug}`} rel="bookmark">
+                  <div className="startupnews-popular-image-wrapper">
+                    <div className="startupnews-popular-image">
+                      <Image
+                        src={post.imageSmall || post.image}
+                        alt={post.title}
+                        width={120}
+                        height={120}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                    <div className="startupnews-popular-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+                  </div>
+                  <div className="startupnews-popular-content">
+                    <h3 className="startupnews-popular-title-text">{post.title}</h3>
+                    <span className="startupnews-popular-read-time">4 MIN READ</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Mobile-only: Startup Events Section */}
+      <section className="startupnews-mobile-events">
+        <div className="mvp-main-box">
+          <h2 className="startupnews-mobile-events-title">Startup Events</h2>
+          <ul className="startupnews-events-list">
+            {startupEvents.slice(0, 4).map((event) => (
+              <EventCard key={event.url} event={event} />
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Mobile-only: AI & DeepTech Section */}
+      {aiDeepTechFeatured1 && (
+        <section className="startupnews-mobile-latest-news">
+          {/* AI & DeepTech Title */}
+          <h2 className="startupnews-mobile-section-title">AI & Deeptech</h2>
+
+          {/* First Featured Article */}
+          <div className="startupnews-mobile-featured">
+            <Link href={`/post/${aiDeepTechFeatured1.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+              <div className="startupnews-mobile-featured-image">
+                <Image
+                  src={aiDeepTechFeatured1.image}
+                  alt={aiDeepTechFeatured1.title}
+                  fill
+                  className="mvp-reg-img"
+                  sizes="100vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
+                <Image
+                  src={aiDeepTechFeatured1.imageSmall || aiDeepTechFeatured1.image}
+                  alt={aiDeepTechFeatured1.title}
+                  className="mvp-mob-img"
+                  width={400}
+                  height={300}
+                  style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  priority
+                />
+              </div>
+              <div className="startupnews-mobile-featured-content">
+                <div className="startupnews-mobile-featured-meta">
+                  <span className="startupnews-mobile-featured-category">{aiDeepTechFeatured1.category}</span>
+                  <span className="startupnews-mobile-featured-time">{aiDeepTechFeatured1.timeAgo}</span>
+                </div>
+                <h1 className="startupnews-mobile-featured-title">{aiDeepTechFeatured1.title}</h1>
+              </div>
+            </Link>
+          </div>
+
+          {/* Second Featured Article */}
+          {aiDeepTechFeatured2 && (
+            <div className="startupnews-mobile-featured">
+              <Link href={`/post/${aiDeepTechFeatured2.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+                <div className="startupnews-mobile-featured-image">
+                  <Image
+                    src={aiDeepTechFeatured2.image}
+                    alt={aiDeepTechFeatured2.title}
+                    fill
+                    className="mvp-reg-img"
+                    sizes="100vw"
+                    style={{ objectFit: "cover" }}
+                  />
+                  <Image
+                    src={aiDeepTechFeatured2.imageSmall || aiDeepTechFeatured2.image}
+                    alt={aiDeepTechFeatured2.title}
+                    className="mvp-mob-img"
+                    width={400}
+                    height={300}
+                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  />
+                </div>
+                <div className="startupnews-mobile-featured-content">
+                  <div className="startupnews-mobile-featured-meta">
+                    <span className="startupnews-mobile-featured-category">{aiDeepTechFeatured2.category}</span>
+                    <span className="startupnews-mobile-featured-time">{aiDeepTechFeatured2.timeAgo}</span>
+                  </div>
+                  <h1 className="startupnews-mobile-featured-title">{aiDeepTechFeatured2.title}</h1>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* AI & DeepTech Article Cards (4 regular articles) */}
+          <div className="mvp-main-box">
+            <ul className="startupnews-articles-list">
+              {aiDeepTechList.map((post) => (
+                <li key={post.id} className="startupnews-article-card">
+                  <Link href={`/post/${post.slug}`} rel="bookmark">
+                    <div className="startupnews-article-content">
+                      <div className="startupnews-article-meta">
+                        <span className="startupnews-category">{post.category}</span>
+                        <span className="startupnews-date">{post.timeAgo}</span>
+                      </div>
+                      <h2 className="startupnews-article-title">{post.title}</h2>
+                      <p className="startupnews-article-excerpt">{post.excerpt}</p>
+                    </div>
+                    <div className="startupnews-article-image">
+                      <Image
+                        src={post.imageSmall || post.image}
+                        alt={post.title}
+                        width={400}
+                        height={240}
+                        style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                      />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* Mobile-only: Fintech Section */}
+      {fintechFeatured1 && (
+        <section className="startupnews-mobile-latest-news">
+          {/* Fintech Title */}
+          <h2 className="startupnews-mobile-section-title">Fintech</h2>
+
+          {/* First Featured Article */}
+          <div className="startupnews-mobile-featured">
+            <Link href={`/post/${fintechFeatured1.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+              <div className="startupnews-mobile-featured-image">
+                <Image
+                  src={fintechFeatured1.image}
+                  alt={fintechFeatured1.title}
+                  fill
+                  className="mvp-reg-img"
+                  sizes="100vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
+                <Image
+                  src={fintechFeatured1.imageSmall || fintechFeatured1.image}
+                  alt={fintechFeatured1.title}
+                  className="mvp-mob-img"
+                  width={400}
+                  height={300}
+                  style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  priority
+                />
+              </div>
+              <div className="startupnews-mobile-featured-content">
+                <div className="startupnews-mobile-featured-meta">
+                  <span className="startupnews-mobile-featured-category">{fintechFeatured1.category}</span>
+                  <span className="startupnews-mobile-featured-time">{fintechFeatured1.timeAgo}</span>
+                </div>
+                <h1 className="startupnews-mobile-featured-title">{fintechFeatured1.title}</h1>
+              </div>
+            </Link>
+          </div>
+
+          {/* Second Featured Article */}
+          {fintechFeatured2 && (
+            <div className="startupnews-mobile-featured">
+              <Link href={`/post/${fintechFeatured2.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+                <div className="startupnews-mobile-featured-image">
+                  <Image
+                    src={fintechFeatured2.image}
+                    alt={fintechFeatured2.title}
+                    fill
+                    className="mvp-reg-img"
+                    sizes="100vw"
+                    style={{ objectFit: "cover" }}
+                  />
+                  <Image
+                    src={fintechFeatured2.imageSmall || fintechFeatured2.image}
+                    alt={fintechFeatured2.title}
+                    className="mvp-mob-img"
+                    width={400}
+                    height={300}
+                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  />
+                </div>
+                <div className="startupnews-mobile-featured-content">
+                  <div className="startupnews-mobile-featured-meta">
+                    <span className="startupnews-mobile-featured-category">{fintechFeatured2.category}</span>
+                    <span className="startupnews-mobile-featured-time">{fintechFeatured2.timeAgo}</span>
+                  </div>
+                  <h1 className="startupnews-mobile-featured-title">{fintechFeatured2.title}</h1>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* Fintech Article Cards (4 regular articles) */}
+          <div className="mvp-main-box">
+            <ul className="startupnews-articles-list">
+              {fintechList.map((post) => (
+                <li key={post.id} className="startupnews-article-card">
+                  <Link href={`/post/${post.slug}`} rel="bookmark">
+                    <div className="startupnews-article-content">
+                      <div className="startupnews-article-meta">
+                        <span className="startupnews-category">{post.category}</span>
+                        <span className="startupnews-date">{post.timeAgo}</span>
+                      </div>
+                      <h2 className="startupnews-article-title">{post.title}</h2>
+                      <p className="startupnews-article-excerpt">{post.excerpt}</p>
+                    </div>
+                    <div className="startupnews-article-image">
+                      <Image
+                        src={post.imageSmall || post.image}
+                        alt={post.title}
+                        width={400}
+                        height={240}
+                        style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                      />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* Mobile-only: Social Media Section */}
+      {socialMediaFeatured1 && (
+        <section className="startupnews-mobile-latest-news">
+          {/* Social Media Title */}
+          <h2 className="startupnews-mobile-section-title">Social Media</h2>
+
+          {/* First Featured Article */}
+          <div className="startupnews-mobile-featured">
+            <Link href={`/post/${socialMediaFeatured1.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+              <div className="startupnews-mobile-featured-image">
+                <Image
+                  src={socialMediaFeatured1.image}
+                  alt={socialMediaFeatured1.title}
+                  fill
+                  className="mvp-reg-img"
+                  sizes="100vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
+                <Image
+                  src={socialMediaFeatured1.imageSmall || socialMediaFeatured1.image}
+                  alt={socialMediaFeatured1.title}
+                  className="mvp-mob-img"
+                  width={400}
+                  height={300}
+                  style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  priority
+                />
+              </div>
+              <div className="startupnews-mobile-featured-content">
+                <div className="startupnews-mobile-featured-meta">
+                  <span className="startupnews-mobile-featured-category">{socialMediaFeatured1.category}</span>
+                  <span className="startupnews-mobile-featured-time">{socialMediaFeatured1.timeAgo}</span>
+                </div>
+                <h1 className="startupnews-mobile-featured-title">{socialMediaFeatured1.title}</h1>
+              </div>
+            </Link>
+          </div>
+
+          {/* Second Featured Article */}
+          {socialMediaFeatured2 && (
+            <div className="startupnews-mobile-featured">
+              <Link href={`/post/${socialMediaFeatured2.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+                <div className="startupnews-mobile-featured-image">
+                  <Image
+                    src={socialMediaFeatured2.image}
+                    alt={socialMediaFeatured2.title}
+                    fill
+                    className="mvp-reg-img"
+                    sizes="100vw"
+                    style={{ objectFit: "cover" }}
+                  />
+                  <Image
+                    src={socialMediaFeatured2.imageSmall || socialMediaFeatured2.image}
+                    alt={socialMediaFeatured2.title}
+                    className="mvp-mob-img"
+                    width={400}
+                    height={300}
+                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  />
+                </div>
+                <div className="startupnews-mobile-featured-content">
+                  <div className="startupnews-mobile-featured-meta">
+                    <span className="startupnews-mobile-featured-category">{socialMediaFeatured2.category}</span>
+                    <span className="startupnews-mobile-featured-time">{socialMediaFeatured2.timeAgo}</span>
+                  </div>
+                  <h1 className="startupnews-mobile-featured-title">{socialMediaFeatured2.title}</h1>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* Social Media Article Cards (4 regular articles) */}
+          <div className="mvp-main-box">
+            <ul className="startupnews-articles-list">
+              {socialMediaList.map((post) => (
+                <li key={post.id} className="startupnews-article-card">
+                  <Link href={`/post/${post.slug}`} rel="bookmark">
+                    <div className="startupnews-article-content">
+                      <div className="startupnews-article-meta">
+                        <span className="startupnews-category">{post.category}</span>
+                        <span className="startupnews-date">{post.timeAgo}</span>
+                      </div>
+                      <h2 className="startupnews-article-title">{post.title}</h2>
+                      <p className="startupnews-article-excerpt">{post.excerpt}</p>
+                    </div>
+                    <div className="startupnews-article-image">
+                      <Image
+                        src={post.imageSmall || post.image}
+                        alt={post.title}
+                        width={400}
+                        height={240}
+                        style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                      />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* Mobile-only: EV & Mobility Section */}
+      {evMobilityFeatured1 && (
+        <section className="startupnews-mobile-latest-news">
+          {/* EV & Mobility Title */}
+          <h2 className="startupnews-mobile-section-title">EV & Mobility</h2>
+
+          {/* First Featured Article */}
+          <div className="startupnews-mobile-featured">
+            <Link href={`/post/${evMobilityFeatured1.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+              <div className="startupnews-mobile-featured-image">
+                <Image
+                  src={evMobilityFeatured1.image}
+                  alt={evMobilityFeatured1.title}
+                  fill
+                  className="mvp-reg-img"
+                  sizes="100vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
+                <Image
+                  src={evMobilityFeatured1.imageSmall || evMobilityFeatured1.image}
+                  alt={evMobilityFeatured1.title}
+                  className="mvp-mob-img"
+                  width={400}
+                  height={300}
+                  style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  priority
+                />
+              </div>
+              <div className="startupnews-mobile-featured-content">
+                <div className="startupnews-mobile-featured-meta">
+                  <span className="startupnews-mobile-featured-category">{evMobilityFeatured1.category}</span>
+                  <span className="startupnews-mobile-featured-time">{evMobilityFeatured1.timeAgo}</span>
+                </div>
+                <h1 className="startupnews-mobile-featured-title">{evMobilityFeatured1.title}</h1>
+              </div>
+            </Link>
+          </div>
+
+          {/* Second Featured Article */}
+          {evMobilityFeatured2 && (
+            <div className="startupnews-mobile-featured">
+              <Link href={`/post/${evMobilityFeatured2.slug}`} rel="bookmark" className="startupnews-mobile-featured-link">
+                <div className="startupnews-mobile-featured-image">
+                  <Image
+                    src={evMobilityFeatured2.image}
+                    alt={evMobilityFeatured2.title}
+                    fill
+                    className="mvp-reg-img"
+                    sizes="100vw"
+                    style={{ objectFit: "cover" }}
+                  />
+                  <Image
+                    src={evMobilityFeatured2.imageSmall || evMobilityFeatured2.image}
+                    alt={evMobilityFeatured2.title}
+                    className="mvp-mob-img"
+                    width={400}
+                    height={300}
+                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                  />
+                </div>
+                <div className="startupnews-mobile-featured-content">
+                  <div className="startupnews-mobile-featured-meta">
+                    <span className="startupnews-mobile-featured-category">{evMobilityFeatured2.category}</span>
+                    <span className="startupnews-mobile-featured-time">{evMobilityFeatured2.timeAgo}</span>
+                  </div>
+                  <h1 className="startupnews-mobile-featured-title">{evMobilityFeatured2.title}</h1>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* EV & Mobility Article Cards (4 regular articles) */}
+          <div className="mvp-main-box">
+            <ul className="startupnews-articles-list">
+              {evMobilityList.map((post) => (
+                <li key={post.id} className="startupnews-article-card">
+                  <Link href={`/post/${post.slug}`} rel="bookmark">
+                    <div className="startupnews-article-content">
+                      <div className="startupnews-article-meta">
+                        <span className="startupnews-category">{post.category}</span>
+                        <span className="startupnews-date">{post.timeAgo}</span>
+                      </div>
+                      <h2 className="startupnews-article-title">{post.title}</h2>
+                      <p className="startupnews-article-excerpt">{post.excerpt}</p>
+                    </div>
+                    <div className="startupnews-article-image">
+                      <Image
+                        src={post.imageSmall || post.image}
+                        alt={post.title}
+                        width={400}
+                        height={240}
+                        style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                      />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* Desktop: Original Featured Section - Layout 1 */}
+      <div className="mvp-main-box startupnews-desktop-featured">
         <section id="mvp-feat1-wrap" className="left relative">
           <div className="mvp-feat1-right-out left relative">
             <div className="mvp-feat1-right-in">
@@ -185,7 +740,7 @@ export default function HomePage() {
       </div>
 
       {/* Homepage widget sections: Entertainment (Feat2), Videos (Dark), Business (Feat2), Tech (Feat1) */}
-      <div id="mvp-home-widget-wrap" className="left relative">
+      <div id="mvp-home-widget-wrap" className="left relative startupnews-desktop-featured">
         <HomeWidgetSection
           title="Entertainment"
           categorySlug="entertainment"
@@ -214,7 +769,7 @@ export default function HomePage() {
       </div>
 
       {/* More News */}
-      <div className="mvp-main-blog-wrap left relative">
+      <div className="mvp-main-blog-wrap left relative startupnews-desktop-featured">
         <div className="mvp-main-box">
           <div className="mvp-main-blog-cont left relative">
             <div className="mvp-widget-home-head">
