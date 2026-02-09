@@ -16,7 +16,6 @@ export default function EventByCountryPage() {
           <div className="mvp-main-blog-out left relative event-by-country-out">
             <div className="mvp-main-blog-in event-by-country-in">
               <div className="mvp-main-blog-body left relative event-by-country-body">
-                <h1 className="event-by-country-title">event-by-country</h1>
 
                 {EVENTS_REGION_ORDER.map((region) => {
                   const events = eventsByRegion[region];

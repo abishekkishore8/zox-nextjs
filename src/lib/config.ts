@@ -7,7 +7,20 @@ export const siteConfig = {
   copyright: "Copyright © 2025 StartupNews.fyi",
   menu: [
     { label: "FUNDING TRACKER", href: "/funding" },
-    { label: "SECTORS", href: "/sectors", hasDropdown: true },
+    {
+      label: "SECTORS",
+      href: "/sectors",
+      hasDropdown: true,
+      children: [
+        { label: "AI & DeepTech", href: "/sectors/ai-deeptech" },
+        { label: "Fintech", href: "/sectors/fintech" },
+        { label: "eCommerce", href: "/sectors/ecommerce" },
+        { label: "Blockchain", href: "/sectors/blockchain" },
+        { label: "Healthtech", href: "/sectors/healthtech" },
+        { label: "Social Media", href: "/sectors/social-media" },
+        { label: "EV & Mobility", href: "/sectors/ev-mobility" },
+      ]
+    },
     { label: "EVENTS", href: "/events" },
   ],
   footerMenu: [
@@ -17,6 +30,9 @@ export const siteConfig = {
     { label: "Entertainment", href: "/category/entertainment" },
     { label: "Business", href: "/category/business" },
     { label: "Tech", href: "/category/tech" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms and Conditions", href: "/terms-and-conditions" },
+    { label: "Return and Refund Policy", href: "/return-refund-policy" },
   ],
   social: {
     facebook: "https://facebook.com",
@@ -71,7 +87,7 @@ export const siteConfig = {
       href: "/press",
       children: [{ label: "Submit", href: "/press/submit" }],
     },
-    { label: "ADVERTISE WITH US", href: "/advertise", dividerBefore: true },
+    { label: "ADVERTISE WITH US", href: "/advertise-with-us", dividerBefore: true },
     { label: "ABOUT US", href: "/about" },
     { label: "CONTACT US", href: "/contact" },
   ],

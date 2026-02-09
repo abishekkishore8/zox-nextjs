@@ -233,6 +233,91 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   color: #e91e63 !important;
 }
 
+
+/* Dropdown Menu Styles */
+.startupnews-menu-item-has-children {
+  position: relative;
+  /* Ensure dropdown is positioned relative to this item */
+}
+
+/* Hide dropdown by default */
+.startupnews-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  min-width: 220px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 10px 0;
+  list-style: none;
+  z-index: 1000;
+  border-radius: 4px;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+  /* Prevent interaction when hidden */
+}
+
+/* Show dropdown on hover */
+.startupnews-menu-item-has-children:hover .startupnews-dropdown-menu {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Dropdown items */
+.startupnews-dropdown-menu li {
+  margin: 0;
+  display: block;
+  width: 100%;
+  line-height: normal;
+}
+
+.startupnews-dropdown-menu li a {
+  display: block;
+  padding: 8px 20px !important;
+  /* Standard comfortable padding */
+  color: #333 !important;
+  font-size: 0.9rem;
+  /* Standard font size */
+  font-weight: 500;
+  /* Slightly bolder for readability if smaller */
+  text-transform: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left !important;
+  /* Force left alignment */
+  line-height: 1.4;
+  /* Tighter line height for the link text */
+}
+
+/* Use pink on hover for dropdown items */
+.startupnews-dropdown-menu li a:hover {
+  background: rgba(233, 30, 99, 0.08);
+  color: #e91e63 !important;
+  padding-left: 20px;
+  /* Remove movement to keep alignment strict if user wants pure left align */
+}
+
+/* Remove the pink underline effect from dropdown items */
+.startupnews-dropdown-menu li a::after,
+.startupnews-menu ul li .startupnews-dropdown-menu li a::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Ensure no borders */
+.startupnews-dropdown-menu li a {
+  border-bottom: none !important;
+  text-decoration: none !important;
+}
+
 .startupnews-dropdown-arrow {
   font-size: 0.6em;
   margin-left: 4px;
@@ -329,11 +414,12 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
 }
 
 /* List: white block, no border/shadow, clear vertical spacing between entries */
-.startup-events-wrap .startup-events-list {
+.startup-events-wrap .startup-events-list,
+.startup-events-wrap #mvp-feat-tab-col1 {
   background: #fff;
   padding: 0;
   margin-top: 0;
-  border: none;
+  border: none !important;
   box-shadow: none;
 }
 
@@ -393,6 +479,32 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   padding: 0;
 }
 
+/* Event list: smaller, lighter grey – LOCATION / DATE */
+.mvp-tab-col-cont .mvp-cat-date-wrap {
+  font-size: 0.7rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.mvp-tab-col-cont .mvp-cd-cat,
+.mvp-tab-col-cont .mvp-cd-date {
+  color: #999 !important;
+}
+
+/* Event title: larger, bolder, dark */
+.mvp-tab-col-cont .mvp-feat1-list-text h2 {
+  color: #333 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  float: none;
+  padding: 0;
+}
+
 /* More News sidebar: CSS sticky so it stays visible and scrolls with page until footer (no disappear) */
 #mvp-site,
 #mvp-site-wall,
@@ -408,7 +520,7 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   .mvp-main-blog-wrap .mvp-main-blog-out {
     display: flex;
     flex-wrap: nowrap;
-    align-items: flex-start;
+    align-items: stretch;
     margin-right: 0 !important;
     float: none !important;
     overflow: visible !important;
@@ -430,7 +542,7 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
     width: 320px;
     min-width: 320px;
     max-width: 320px;
-    align-self: flex-start;
+    align-self: stretch;
     margin-left: 0;
     overflow: visible !important;
   }
@@ -438,6 +550,119 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   .mvp-main-blog-wrap .mvp-main-blog-out #mvp-side-wrap .left {
     float: none !important;
   }
+}
+
+/* Single Post Page: Centering and Full-width (no sidebar) */
+#mvp-post-main,
+.mvp-post-main-out,
+.mvp-post-main-in,
+#mvp-post-content,
+#mvp-content-wrap,
+#mvp-content-body,
+#mvp-content-main,
+#mvp-post-head,
+#mvp-post-feat-img,
+.mvp-more-news-wrap {
+  float: none !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  max-width: 1200px;
+}
+
+/* Constrain article text and inner blocks for better readability/alignment */
+#mvp-content-main,
+#mvp-soc-share-wrap,
+#mvp-content-bot,
+#mvp-author-box-wrap,
+#mvp-prev-next-wrap {
+  max-width: 800px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  float: none !important;
+  line-height: 1.8;
+  width: 100% !important;
+}
+
+/* Spacing under author section */
+.mvp-author-info-wrap {
+  margin-bottom: 25px !important;
+}
+
+/* Post Navigation (Don't Miss / Up Next) */
+#mvp-prev-next-wrap {
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.mvp-prev-post-wrap,
+.mvp-next-post-wrap {
+  flex: 1;
+}
+
+.mvp-prev-next-cont {
+  display: flex;
+  align-items: center;
+}
+
+.mvp-prev-next-label {
+  color: #ff005a;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.mvp-prev-next-text p {
+  font-weight: 800;
+  font-size: 1.1rem;
+  line-height: 1.3;
+  margin: 0;
+  color: #333;
+}
+
+.mvp-prev-arr,
+.mvp-next-arr {
+  line-height: 1;
+}
+
+@media screen and (max-width: 768px) {
+  #mvp-prev-next-wrap {
+    flex-direction: column;
+  }
+
+  .mvp-next-post-wrap {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+}
+
+/* Reset social bar offsets that push content off-center */
+.mvp-post-soc-out,
+.mvp-post-soc-in {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.mvp-post-soc-wrap {
+  display: none !important;
+  /* Hide vertical share bar if it's causing alignment issues */
+}
+
+/* Sticky sidebar (JS) wrapper/content */
+.sticky-sidebar-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.sticky-sidebar-content {
+  box-sizing: border-box;
 }
 
 /* Sticky sidebar JS: keep fixed box visible and aligned */
@@ -483,6 +708,10 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
 
 .event-by-country-section {
   margin-bottom: 48px;
+}
+
+.event-by-country-section:first-child {
+  padding-top: 40px;
 }
 
 .event-by-country-section:last-child {
@@ -661,27 +890,17 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   border-top: none !important;
 }
 
-/* Allow sticky to work: theme uses overflow:hidden on #mvp-site which breaks position:sticky */
+/* More News sidebar: CSS sticky so it stays visible and scrolls with page until footer (no disappear) */
 #mvp-site,
 #mvp-site-wall,
 #mvp-site-main,
 #mvp-main-body-wrap,
 .mvp-main-blog-wrap,
 .mvp-main-blog-cont,
-.mvp-main-blog-out,
-#mvp-side-wrap {
+.mvp-main-blog-out {
   overflow: visible !important;
 }
 
-/* CSS Sticky Sidebar - styles for JS-based sticky implementation */
-.sticky-sidebar-wrapper {
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
-
-/* More News sidebar: stick when it reaches its place, unstick when footer is reached (desktop) */
 @media (min-width: 1024px) {
   .mvp-main-blog-wrap .mvp-main-blog-out {
     display: flex;
@@ -690,9 +909,9 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
     /* Changed from flex-start to stretch is required for sticky */
     margin-right: 0 !important;
     float: none !important;
+    overflow: visible !important;
   }
 
-  /* Only disable float on the two columns, not on inner .left (article images/text need float) */
   .mvp-main-blog-wrap .mvp-main-blog-out>.mvp-main-blog-in,
   .mvp-main-blog-wrap .mvp-main-blog-out>#mvp-side-wrap {
     float: none !important;
@@ -711,19 +930,26 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
     max-width: 320px;
     align-self: stretch !important;
     margin-left: 0;
-    position: relative;
+    overflow: visible !important;
   }
 
-  /* Ensure sticky sidebar wrapper works within sidebar column */
-  .mvp-main-blog-wrap .mvp-main-blog-out #mvp-side-wrap .sticky-sidebar-wrapper {
-    position: sticky !important;
-    top: 24px !important;
-  }
-
-  /* Sidebar content must not float so sticky wrapper keeps correct height/layout */
   .mvp-main-blog-wrap .mvp-main-blog-out #mvp-side-wrap .left {
     float: none !important;
   }
+}
+
+/* Sticky sidebar JS: keep fixed box visible and aligned */
+.sticky-sidebar-js-root {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible !important;
+}
+
+.sticky-sidebar-fixed {
+  position: fixed !important;
+  visibility: visible !important;
+  pointer-events: auto;
+  z-index: 100;
 }
 
 @media (max-width: 1023px) {

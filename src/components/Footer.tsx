@@ -32,11 +32,11 @@ export function Footer() {
         <div>
           <h3>Topics</h3>
           <ul>
-            <li><Link href="/topics/openai">OpenAI</Link></li>
-            <li><Link href="/topics/ai">AI</Link></li>
-            <li><Link href="/topics/meta">Meta</Link></li>
-            <li><Link href="/topics/uber">Uber</Link></li>
-            <li><Link href="/topics/amazon">Amazon</Link></li>
+            <li><Link href="/sectors/openai">OpenAI</Link></li>
+            <li><Link href="/sectors/ai">AI</Link></li>
+            <li><Link href="/sectors/meta">Meta</Link></li>
+            <li><Link href="/sectors/uber">Uber</Link></li>
+            <li><Link href="/sectors/amazon">Amazon</Link></li>
           </ul>
         </div>
 
