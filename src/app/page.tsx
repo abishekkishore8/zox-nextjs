@@ -3,60 +3,21 @@ import Image from "next/image";
 import {
   getFeat1LeftPosts,
   getTrendingPosts,
-  getFeat1ListPosts,
   getMoreNewsPosts,
   getCategorySectionPosts,
   getDarkSectionPosts,
   getFeat1SectionPosts,
 } from "@/lib/data";
-import { Feat1Tabs } from "@/components/Feat1Tabs";
 import { HomeWidgetSection } from "@/components/HomeWidgetSection";
 import { HomeDarkSection } from "@/components/HomeDarkSection";
 import { HomeFeat1Section } from "@/components/HomeFeat1Section";
-import { Sidebar } from "@/components/Sidebar";
 import { MoreNewsSection } from "@/components/MoreNewsSection";
-
-function Feat1ListPost({ post }: { post: { id: string; slug: string; title: string; category: string; timeAgo: string; imageSmall?: string; image: string } }) {
-  return (
-    <Link href={`/post/${post.slug}`} rel="bookmark">
-      <div className="mvp-feat1-list-cont left relative">
-        <div className="mvp-feat1-list-out relative">
-          <div className="mvp-feat1-list-img left relative">
-            <Image
-              src={post.imageSmall || post.image}
-              alt={post.title}
-              width={80}
-              height={80}
-              className="mvp-reg-img"
-            />
-            <Image
-              src={post.imageSmall || post.image}
-              alt={post.title}
-              width={80}
-              height={80}
-              className="mvp-mob-img"
-            />
-          </div>
-          <div className="mvp-feat1-list-in">
-            <div className="mvp-feat1-list-text">
-              <div className="mvp-cat-date-wrap left relative">
-                <span className="mvp-cd-cat left relative">{post.category}</span>
-                <span className="mvp-cd-date left relative">{post.timeAgo}</span>
-              </div>
-              <h2>{post.title}</h2>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
+import { StartupEventsSection } from "@/components/StartupEventsSection";
+import { StickySidebarContent } from "@/components/StickySidebarContent";
 
 export default function HomePage() {
   const { main, sub } = getFeat1LeftPosts();
   const trending = getTrendingPosts();
-  const featExclude = [main.id, sub[0].id, sub[1].id];
-  const latestList = getFeat1ListPosts(featExclude);
   const moreNews = getMoreNewsPosts([main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]);
 
   const entertainmentSection = getCategorySectionPosts("entertainment");
@@ -74,6 +35,9 @@ export default function HomePage() {
               <div className="mvp-feat1-main left relative">
                 {/* Left column: 1 big featured + 2 sub */}
                 <div className="mvp-feat1-left-wrap relative">
+                  <h3 className="mvp-feat1-pop-head">
+                    <span className="mvp-feat1-pop-head">Latest News</span>
+                  </h3>
                   <Link href={`/post/${main.slug}`} rel="bookmark">
                     <div className="mvp-feat1-feat-wrap left relative">
                       <div className="mvp-feat1-feat-img left relative" style={{ position: "relative" }}>
@@ -206,51 +170,15 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            {/* Right column: Ad + Latest / Videos / Galleries tabs */}
+            {/* Right column: Ad + Startup Events */}
             <div className="mvp-feat1-right-wrap left relative">
               <div className="mvp-feat1-list-ad left relative">
-                <span className="mvp-ad-label">Advertisement</span>
-                <div style={{ background: "#f0f0f0", padding: "20px", textAlign: "center", minHeight: 250 }}>
+                <span className="mvp-ad-label">ADVERTISEMENT</span>
+                <div className="mvp-feat1-list-ad-placeholder">
                   Ad placeholder
                 </div>
               </div>
-              <div className="mvp-feat1-list-wrap left relative">
-                <div className="mvp-feat1-list-head-wrap left relative">
-                  <ul className="mvp-feat1-list-buts left relative">
-                    <li className="mvp-feat-col-tab">
-                      <a href="#mvp-feat-tab-col1">
-                        <span className="mvp-feat1-list-but">Latest</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#mvp-feat-tab-col2">
-                        <span className="mvp-feat1-list-but">Videos</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#mvp-feat-tab-col3">
-                        <span className="mvp-feat1-list-but">Galleries</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-                <Feat1Tabs />
-                <div id="mvp-feat-tab-col1" className="mvp-feat1-list left relative mvp-tab-col-cont">
-                  {latestList.map((post) => (
-                    <Feat1ListPost key={post.id} post={post} />
-                  ))}
-                </div>
-                <div id="mvp-feat-tab-col2" className="mvp-feat1-list left relative mvp-tab-col-cont">
-                  {latestList.slice(0, 5).map((post) => (
-                    <Feat1ListPost key={`v-${post.id}`} post={post} />
-                  ))}
-                </div>
-                <div id="mvp-feat-tab-col3" className="mvp-feat1-list left relative mvp-tab-col-cont">
-                  {latestList.slice(5, 10).map((post) => (
-                    <Feat1ListPost key={`g-${post.id}`} post={post} />
-                  ))}
-                </div>
-              </div>
+              <StartupEventsSection />
             </div>
           </div>
         </section>
@@ -300,8 +228,10 @@ export default function HomePage() {
                   <MoreNewsSection posts={moreNews} />
                 </div>
               </div>
-              <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
-                <Sidebar excludeIds={[main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]} />
+              <div id="mvp-side-wrap" className="left relative">
+                <StickySidebarContent>
+                  <StartupEventsSection />
+                </StickySidebarContent>
               </div>
             </div>
           </div>
