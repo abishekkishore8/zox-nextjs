@@ -7,7 +7,20 @@ export const siteConfig = {
   copyright: "Copyright © 2025 StartupNews.fyi",
   menu: [
     { label: "FUNDING TRACKER", href: "/funding" },
-    { label: "SECTORS", href: "/sectors", hasDropdown: true },
+    {
+      label: "SECTORS",
+      href: "/sectors",
+      hasDropdown: true,
+      children: [
+        { label: "AI & DeepTech", href: "/sectors/ai-deeptech" },
+        { label: "Fintech", href: "/sectors/fintech" },
+        { label: "eCommerce", href: "/sectors/ecommerce" },
+        { label: "Blockchain", href: "/sectors/blockchain" },
+        { label: "Healthtech", href: "/sectors/healthtech" },
+        { label: "Social Media", href: "/sectors/social-media" },
+        { label: "EV & Mobility", href: "/sectors/ev-mobility" },
+      ]
+    },
     { label: "EVENTS", href: "/events" },
   ],
   footerMenu: [

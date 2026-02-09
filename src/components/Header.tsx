@@ -32,13 +32,22 @@ export function Header() {
                           <div className="mvp-nav-menu left startupnews-menu">
                             <ul>
                               {siteConfig.menu.map((item) => (
-                                <li key={item.href}>
+                                <li key={item.href} className={item.children ? "startupnews-menu-item-has-children" : ""}>
                                   <Link href={item.href}>
                                     {item.label}
                                     {"hasDropdown" in item && item.hasDropdown && (
                                       <span className="startupnews-dropdown-arrow">▼</span>
                                     )}
                                   </Link>
+                                  {item.children && (
+                                    <ul className="startupnews-dropdown-menu">
+                                      {item.children.map((subItem) => (
+                                        <li key={subItem.href}>
+                                          <Link href={subItem.href}>{subItem.label}</Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
                                 </li>
                               ))}
                             </ul>

@@ -233,6 +233,91 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   color: #e91e63 !important;
 }
 
+
+/* Dropdown Menu Styles */
+.startupnews-menu-item-has-children {
+  position: relative;
+  /* Ensure dropdown is positioned relative to this item */
+}
+
+/* Hide dropdown by default */
+.startupnews-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  min-width: 220px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 10px 0;
+  list-style: none;
+  z-index: 1000;
+  border-radius: 4px;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+  /* Prevent interaction when hidden */
+}
+
+/* Show dropdown on hover */
+.startupnews-menu-item-has-children:hover .startupnews-dropdown-menu {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Dropdown items */
+.startupnews-dropdown-menu li {
+  margin: 0;
+  display: block;
+  width: 100%;
+  line-height: normal;
+}
+
+.startupnews-dropdown-menu li a {
+  display: block;
+  padding: 8px 20px !important;
+  /* Standard comfortable padding */
+  color: #333 !important;
+  font-size: 0.9rem;
+  /* Standard font size */
+  font-weight: 500;
+  /* Slightly bolder for readability if smaller */
+  text-transform: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left !important;
+  /* Force left alignment */
+  line-height: 1.4;
+  /* Tighter line height for the link text */
+}
+
+/* Use pink on hover for dropdown items */
+.startupnews-dropdown-menu li a:hover {
+  background: rgba(233, 30, 99, 0.08);
+  color: #e91e63 !important;
+  padding-left: 20px;
+  /* Remove movement to keep alignment strict if user wants pure left align */
+}
+
+/* Remove the pink underline effect from dropdown items */
+.startupnews-dropdown-menu li a::after,
+.startupnews-menu ul li .startupnews-dropdown-menu li a::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Ensure no borders */
+.startupnews-dropdown-menu li a {
+  border-bottom: none !important;
+  text-decoration: none !important;
+}
+
 .startupnews-dropdown-arrow {
   font-size: 0.6em;
   margin-left: 4px;
@@ -482,6 +567,10 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
 
 .event-by-country-section {
   margin-bottom: 48px;
+}
+
+.event-by-country-section:first-child {
+  padding-top: 40px;
 }
 
 .event-by-country-section:last-child {
@@ -1832,5 +1921,149 @@ footer.footer {
   .footer-bottom-bar .footer-policy-links,
   .footer-bottom-bar .footer-social-links {
     justify-content: center;
+  }
+}
+
+/* Sector Page - Dark Featured Layout (mvp-feat6) */
+#mvp-feat6-wrap {
+  width: 100%;
+  margin-bottom: 40px;
+  background: #000;
+  clear: both;
+  position: relative;
+}
+
+#mvp-feat6-main {
+  position: relative;
+  width: 100%;
+  min-height: 550px;
+  overflow: hidden;
+}
+
+#mvp-feat6-img {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 60%;
+  height: 100%;
+  z-index: 1;
+}
+
+#mvp-feat6-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block !important;
+}
+
+/* Gradient Overlay to blend image into black background */
+#mvp-feat6-img::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(to right, #000 0%, rgba(0, 0, 0, 0.95) 15%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0.2) 80%, transparent 100%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+#mvp-feat6-text {
+  position: relative;
+  width: 50%;
+  padding: 80px 60px;
+  z-index: 20;
+  float: left;
+}
+
+#mvp-feat6-text h3 {
+  margin: 0 0 30px 0;
+  padding: 0;
+}
+
+#mvp-feat6-text h2 {
+  color: #fff;
+  font-size: 4rem;
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 0 0 25px 0;
+  text-transform: none;
+  font-family: 'NB-International', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+#mvp-feat6-text p {
+  color: #e0e0e0;
+  font-size: 1.2rem;
+  line-height: 1.7;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Category badge styling inside feat6 */
+#mvp-feat6-text .mvp-feat1-pop-head {
+  display: inline-block;
+  background: #e91e63;
+  color: #fff;
+  padding: 8px 20px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  border-radius: 0;
+}
+
+@media screen and (max-width: 1200px) {
+  #mvp-feat6-text h2 {
+    font-size: 3.2rem;
+  }
+
+  #mvp-feat6-text {
+    padding: 60px 40px;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  #mvp-feat6-text h2 {
+    font-size: 2.8rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  #mvp-feat6-main {
+    min-height: auto;
+    display: block;
+  }
+
+  #mvp-feat6-img {
+    position: relative;
+    width: 100%;
+    height: 350px;
+    right: auto;
+    top: auto;
+    float: none;
+  }
+
+  #mvp-feat6-img::before {
+    background: linear-gradient(to top, #000 0%, rgba(0, 0, 0, 0.8) 30%, transparent 100%);
+    width: 100%;
+    height: 60%;
+    top: auto;
+    bottom: 0;
+    left: 0;
+  }
+
+  #mvp-feat6-text {
+    width: 100%;
+    padding: 30px 20px;
+    float: none;
+  }
+
+  #mvp-feat6-text h2 {
+    font-size: 2rem;
+  }
+
+  #mvp-feat6-text p {
+    font-size: 1rem;
   }
 }
