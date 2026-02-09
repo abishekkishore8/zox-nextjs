@@ -26,33 +26,28 @@ export function FlyMenu() {
   return (
     <div id="mvp-fly-wrap" className="startupnews-fly">
       <div id="mvp-fly-menu-top">
-        <div className="mvp-fly-top-out">
-          <div className="mvp-fly-top-in">
-            <div id="mvp-fly-logo">
-              <Link href="/" onClick={toggle}>
-                <Image
-                  src={siteConfig.logoNav}
-                  alt={siteConfig.name}
-                  width={200}
-                  height={42}
-                  className="startupnews-fly-logo-img"
-                  priority
-                />
-              </Link>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="mvp-fly-but-wrap mvp-fly-but-menu mvp-fly-but-click startupnews-fly-close"
-            onClick={toggle}
-            aria-label="Close menu"
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+        <div id="mvp-fly-logo">
+          <Link href="/" onClick={toggle}>
+            <Image
+              src={siteConfig.logoNav}
+              alt={siteConfig.name}
+              width={200}
+              height={42}
+              className="startupnews-fly-logo-img"
+              priority
+            />
+          </Link>
         </div>
+        <button
+          type="button"
+          className="startupnews-fly-close"
+          onClick={toggle}
+          aria-label="Close menu"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M1 1L17 17M1 17L17 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
 
       <div id="mvp-fly-menu-wrap">
