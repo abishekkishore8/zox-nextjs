@@ -20,10 +20,22 @@ export default function HomePage() {
   const trending = getTrendingPosts();
   const moreNews = getMoreNewsPosts([main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]);
 
-  const entertainmentSection = getCategorySectionPosts("entertainment");
-  const videosDarkSection = getDarkSectionPosts("sports");
-  const businessSection = getCategorySectionPosts("business");
-  const techFeat1Section = getFeat1SectionPosts("tech");
+  const aiDeeptechSection = getCategorySectionPosts("ai-deeptech");
+  const fintechSection = getDarkSectionPosts("fintech");
+  const socialMediaSection = getCategorySectionPosts("social-media");
+  const evMobilitySection = getFeat1SectionPosts("ev-mobility");
+
+  // Block 2 fetching
+  const agritechSection = getCategorySectionPosts("agritech");
+  const ecommerceSection = getDarkSectionPosts("ecommerce");
+  const web3Section = getCategorySectionPosts("web3");
+  const healthTechSection = getFeat1SectionPosts("healthtech");
+
+  // Block 3 fetching
+  const cyberSecuritySection = getCategorySectionPosts("cyber-security");
+  const spaceTechSection = getDarkSectionPosts("spacetech");
+  const foodTechSection = getCategorySectionPosts("foodtech");
+  const edTechSection = getFeat1SectionPosts("edtech");
 
   return (
     <>
@@ -184,32 +196,72 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* Homepage widget sections: Entertainment (Feat2), Videos (Dark), Business (Feat2), Tech (Feat1) */}
+      {/* Homepage widget sections Block 1: AI & Deeptech, Fintech, Social Media, EV & Mobility */}
       <div id="mvp-home-widget-wrap" className="left relative">
         <HomeWidgetSection
-          title="Entertainment"
-          categorySlug="entertainment"
-          featured={entertainmentSection.featured}
-          right={entertainmentSection.right}
-          list={entertainmentSection.list}
+          title="AI & Deeptech"
+          categorySlug="ai-deeptech"
+          featured={aiDeeptechSection.featured}
+          right={aiDeeptechSection.right}
+          list={aiDeeptechSection.list}
         />
         <HomeDarkSection
-          title="Videos"
-          featured={videosDarkSection.featured}
-          list={videosDarkSection.list}
+          title="Fintech"
+          featured={fintechSection.featured}
+          list={fintechSection.list}
         />
         <HomeWidgetSection
-          title="Business"
-          categorySlug="business"
-          featured={businessSection.featured}
-          right={businessSection.right}
-          list={businessSection.list}
+          title="Social Media"
+          categorySlug="social-media"
+          featured={socialMediaSection.featured}
+          right={socialMediaSection.right}
+          list={socialMediaSection.list}
           mainpos="middle"
         />
         <HomeFeat1Section
-          title="Tech"
-          top={techFeat1Section.top}
-          bottom={techFeat1Section.bottom}
+          title="EV & Mobility"
+          top={evMobilitySection.top}
+          bottom={evMobilitySection.bottom}
+        />
+      </div>
+
+      {/* Homepage widget sections Block 2: Agritech, Ecommerce, Web3, HealthTech */}
+      <div id="mvp-home-widget-wrap-2" className="left relative" style={{ marginTop: "20px" }}>
+        <HomeWidgetSection
+          title="Agritech"
+          categorySlug="agritech"
+          featured={agritechSection.featured}
+          right={agritechSection.right}
+          list={agritechSection.list}
+        />
+        <HomeDarkSection
+          title="Ecommerce"
+          featured={ecommerceSection.featured}
+          list={ecommerceSection.list}
+        />
+        <HomeWidgetSection
+          title="Web 3.0"
+          categorySlug="web3"
+          featured={web3Section.featured}
+          right={web3Section.right}
+          list={web3Section.list}
+          mainpos="middle"
+        />
+        <HomeFeat1Section
+          title="HealthTech"
+          top={healthTechSection.top}
+          bottom={healthTechSection.bottom}
+        />
+      </div>
+
+      {/* Homepage widget sections Block 3: Cyber Security */}
+      <div id="mvp-home-widget-wrap-3" className="left relative" style={{ marginTop: "40px" }}>
+        <HomeWidgetSection
+          title="Cyber Security"
+          categorySlug="cyber-security"
+          featured={cyberSecuritySection.featured}
+          right={cyberSecuritySection.right}
+          list={cyberSecuritySection.list}
         />
       </div>
 

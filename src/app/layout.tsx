@@ -37,7 +37,7 @@ export default function RootLayout({
             <div id="mvp-site-wall" className="left relative">
               <div id="mvp-site-main" className="left relative">
                 <Header />
-                <div id="mvp-main-body-wrap" className="left relative">
+                <div id="mvp-main-body-wrap" className="left relative" style={{ marginTop: "20px" }}>
                   {children}
                 </div>
                 <Footer />

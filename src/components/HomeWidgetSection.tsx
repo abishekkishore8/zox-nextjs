@@ -132,12 +132,6 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
               </div>
             </div>
             <div className="mvp-widget-feat2-side left relative">
-              <div className="mvp-widget-feat2-side-ad left relative">
-                <span className="mvp-ad-label">Advertisement</span>
-                <div style={{ background: "#f0f0f0", padding: 20, textAlign: "center", minHeight: 250 }}>
-                  Ad
-                </div>
-              </div>
               <div className="mvp-widget-feat2-side-list left relative">
                 <div className="mvp-feat1-list left relative">
                   {list.map((post) => (
