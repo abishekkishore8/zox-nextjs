@@ -245,6 +245,7 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 0;
 }
 
 .startupnews-search {
@@ -741,21 +742,102 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
     max-width: 160px;
   }
 
+  /* Mobile search: show only icon by default */
   .startupnews-search {
     height: 36px;
+    position: relative;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    display: inline-flex;
+    align-items: center;
   }
 
+  /* Hide search input by default on mobile */
   .startupnews-search-input {
-    width: 100px;
-    min-width: 80px;
-    padding: 0 10px 0 12px;
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    opacity: 0;
+    border: none;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    font-size: 0.9rem;
   }
 
+  /* Show search input when expanded */
+  .startupnews-search-expanded {
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 20px 20px 20px 20px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    padding: 0;
+  }
+
+  .startupnews-search-expanded .startupnews-search-input {
+    width: 200px;
+    min-width: 200px;
+    padding: 0 10px 0 12px;
+    opacity: 1;
+    border: none;
+    background: transparent;
+  }
+
+  /* Search button - always visible on mobile */
   .startupnews-search-btn {
-    width: 34px;
-    height: 34px;
-    margin: 1px;
+    width: 36px;
+    height: 36px;
+    margin: 0;
     font-size: 0.85rem;
+    border-radius: 50%;
+    background: #E62E69;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s ease, border-radius 0.3s ease;
+  }
+
+  .startupnews-search-btn:hover {
+    background: #c41a52;
+  }
+
+  /* When expanded, adjust button border radius */
+  .startupnews-search-expanded .startupnews-search-btn {
+    border-radius: 0 20px 20px 0;
+    margin: 0;
+  }
+
+  /* Hide hamburger on left side in mobile */
+  .startupnews-nav-inner .mvp-nav-bot-left {
+    display: none !important;
+  }
+
+  /* Show hamburger on right side in mobile */
+  .mvp-nav-bot-right-mobile-hamburger {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Adjust right section to accommodate hamburger */
+  .startupnews-search-wrap {
+    display: flex !important;
+    align-items: center;
+    gap: 0;
+  }
+}
+
+/* Hide mobile hamburger on desktop */
+@media (min-width: 768px) {
+  .mvp-nav-bot-right-mobile-hamburger {
+    display: none !important;
   }
 }
 
@@ -1520,7 +1602,6 @@ button.mvp-inf-more-but:hover {
   color: #fff !important;
 }
 
-   
 /* ========================================
    FOOTER STYLES
    ======================================== */
@@ -1832,5 +1913,490 @@ footer.footer {
   .footer-bottom-bar .footer-policy-links,
   .footer-bottom-bar .footer-social-links {
     justify-content: center;
+  }
+}
+
+/* ========================================
+   NEW HOMEPAGE LAYOUT (Business Insider Style)
+   Mobile-only: Simple Latest News Section
+   ======================================== */
+
+/* Mobile Latest News Section - Show only on mobile */
+.startupnews-mobile-latest-news {
+  width: 100%;
+  background: #fff;
+  display: block;
+}
+
+/* Mobile Featured Article at Top */
+.startupnews-mobile-featured {
+  width: 100%;
+  margin-bottom: 0;
+  background: #fff;
+}
+
+.startupnews-mobile-featured:not(:last-of-type) {
+  border-bottom: 1px dotted #000;
+}
+
+.startupnews-mobile-featured-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+
+.startupnews-mobile-featured-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.startupnews-mobile-featured-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.startupnews-mobile-featured-content {
+  padding: 20px 16px;
+  background: #fff;
+}
+
+.startupnews-mobile-featured-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+}
+
+.startupnews-mobile-featured-category {
+  color: #111;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+}
+
+.startupnews-mobile-featured-time {
+  color: #666;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.startupnews-mobile-featured-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 12px 0;
+  color: #111;
+}
+
+.startupnews-mobile-featured-excerpt {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #555;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.startupnews-mobile-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 24px 16px 16px;
+  color: #111;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: relative;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.startupnews-mobile-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  width: 80px;
+  height: 3px;
+  background: #0066cc;
+}
+
+/* Desktop sections - Hide on mobile */
+.startupnews-desktop-featured {
+  display: none;
+}
+
+/* Desktop styles - Show desktop layout, hide mobile */
+@media (min-width: 768px) {
+  .startupnews-mobile-latest-news {
+    display: none !important;
+  }
+
+  .startupnews-desktop-featured {
+    display: block !important;
+  }
+}
+
+/* Articles Section - Card grid (Mobile only) */
+.startupnews-articles-section {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+}
+
+.startupnews-articles-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.startupnews-article-card {
+  width: 100%;
+  border-bottom: 1px dotted #000;
+}
+
+.startupnews-article-card:last-child {
+  border-bottom: none;
+}
+
+.startupnews-article-card a {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s ease;
+}
+
+.startupnews-article-card a:hover {
+  background: #fafafa;
+}
+
+.startupnews-article-image {
+  flex-shrink: 0;
+  width: 100px;
+  min-width: 100px;
+  height: 100px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.startupnews-article-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.startupnews-article-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.startupnews-article-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.startupnews-article-title {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 6px 0;
+  color: #111;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.startupnews-article-excerpt {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #666;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Mobile-only styles for article cards */
+@media (max-width: 767px) {
+  .startupnews-article-card a {
+    padding: 16px;
+  }
+}
+
+/* ========================================
+   MOBILE: MOST POPULAR SECTION
+   ======================================== */
+
+/* Most Popular Section - Mobile only */
+.startupnews-mobile-most-popular {
+  width: 100%;
+  background: #fff;
+  display: block;
+  margin-top: 0;
+}
+
+.startupnews-mobile-popular-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 20px 12px 12px;
+  color: #111;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.startupnews-mobile-popular-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  width: 60px;
+  height: 3px;
+  background: #0066cc;
+}
+
+.startupnews-popular-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.startupnews-popular-card {
+  width: 100%;
+  border-bottom: 1px dotted #000;
+}
+
+.startupnews-popular-card:last-child {
+  border-bottom: none;
+}
+
+.startupnews-popular-card a {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s ease;
+}
+
+.startupnews-popular-card a:hover {
+  background: #fafafa;
+}
+
+.startupnews-popular-image-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  min-width: 120px;
+  height: 120px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.startupnews-popular-image {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.startupnews-popular-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.startupnews-popular-number {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1;
+  padding: 8px 12px 8px 8px;
+  pointer-events: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.startupnews-popular-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.startupnews-popular-title-text {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+  color: #111;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.startupnews-popular-read-time {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Mobile: Startup Events Section */
+.startupnews-mobile-events {
+  display: block;
+  width: 100%;
+  background: #fff;
+}
+
+.startupnews-mobile-events-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 20px 12px 12px;
+  color: #111;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.startupnews-mobile-events-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  width: 60px;
+  height: 3px;
+  background: #0066cc;
+}
+
+.startupnews-events-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.startupnews-event-card {
+  width: 100%;
+  border-bottom: 1px dotted #000;
+}
+
+.startupnews-event-card:last-child {
+  border-bottom: none;
+}
+
+.startupnews-event-link {
+  display: block;
+  padding: 16px 12px;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+
+.startupnews-event-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.startupnews-event-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.startupnews-event-location {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.startupnews-event-book-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid #000;
+  border-radius: 20px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #111;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.startupnews-event-book-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.startupnews-event-book-icon {
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.startupnews-event-title-text {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0;
+  color: #111;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+/* Hide on desktop */
+@media (min-width: 768px) {
+  .startupnews-mobile-most-popular {
+    display: none !important;
+  }
+  
+  .startupnews-mobile-events {
+    display: none !important;
   }
 }
