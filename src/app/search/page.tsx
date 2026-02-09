@@ -1,18 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getAllPosts } from "@/lib/data";
-import { Sidebar } from "@/components/Sidebar";
+// import { Sidebar } from "@/components/Sidebar"; // Unused
+import { StickySidebarContent } from "@/components/StickySidebarContent";
+import { StartupEventsSection } from "@/components/StartupEventsSection";
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
   const allPosts = getAllPosts();
   const posts = q
     ? allPosts.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q.toLowerCase()) ||
-          p.excerpt.toLowerCase().includes(q.toLowerCase()) ||
-          p.category.toLowerCase().includes(q.toLowerCase())
-      )
+      (p) =>
+        p.title.toLowerCase().includes(q.toLowerCase()) ||
+        p.excerpt.toLowerCase().includes(q.toLowerCase()) ||
+        p.category.toLowerCase().includes(q.toLowerCase())
+    )
     : [];
 
   return (
@@ -88,7 +90,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               </div>
             </div>
             <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
-              <Sidebar />
+              <StickySidebarContent>
+                <StartupEventsSection />
+              </StickySidebarContent>
             </div>
           </div>
         </div>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getAllPosts } from "@/lib/data";
-import { Sidebar } from "@/components/Sidebar";
+// import { Sidebar } from "@/components/Sidebar"; // Unused
+import { StickySidebarContent } from "@/components/StickySidebarContent";
+import { StartupEventsSection } from "@/components/StartupEventsSection";
 
 export default function NewsPage() {
   const posts = getAllPosts();
@@ -61,7 +63,9 @@ export default function NewsPage() {
               </div>
             </div>
             <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
-              <Sidebar />
+              <StickySidebarContent>
+                <StartupEventsSection />
+              </StickySidebarContent>
             </div>
           </div>
         </div>

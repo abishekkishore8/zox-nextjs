@@ -30,6 +30,9 @@ export const siteConfig = {
     { label: "Entertainment", href: "/category/entertainment" },
     { label: "Business", href: "/category/business" },
     { label: "Tech", href: "/category/tech" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
+    { label: "Terms and Conditions", href: "/terms-and-conditions" },
+    { label: "Return and Refund Policy", href: "/return-refund-policy" },
   ],
   social: {
     facebook: "https://facebook.com",
@@ -84,7 +87,7 @@ export const siteConfig = {
       href: "/press",
       children: [{ label: "Submit", href: "/press/submit" }],
     },
-    { label: "ADVERTISE WITH US", href: "/advertise", dividerBefore: true },
+    { label: "ADVERTISE WITH US", href: "/advertise-with-us", dividerBefore: true },
     { label: "ABOUT US", href: "/about" },
     { label: "CONTACT US", href: "/contact" },
   ],

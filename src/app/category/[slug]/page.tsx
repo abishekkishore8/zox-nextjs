@@ -2,7 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { getPostsByCategory, getCategorySectionPosts } from "@/lib/data";
 import { notFound } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
+// import { Sidebar } from "@/components/Sidebar"; // Unused
+import { StickySidebarContent } from "@/components/StickySidebarContent";
+import { StartupEventsSection } from "@/components/StartupEventsSection";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -187,7 +189,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               </div>
             </div>
             <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
-              <Sidebar />
+              <StickySidebarContent>
+                <StartupEventsSection />
+              </StickySidebarContent>
             </div>
           </div>
         </div>

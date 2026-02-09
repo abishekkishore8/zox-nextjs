@@ -9,13 +9,19 @@ const PAGE_SIZE = 10;
 
 interface MoreNewsSectionProps {
   posts: Post[];
+  buttonText?: string;
+  pageSize?: number;
 }
 
-export function MoreNewsSection({ posts }: MoreNewsSectionProps) {
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+export function MoreNewsSection({
+  posts,
+  buttonText = "More Posts",
+  pageSize = 10,
+}: MoreNewsSectionProps) {
+  const [visibleCount, setVisibleCount] = useState(pageSize);
   const visiblePosts = posts.slice(0, visibleCount);
   const hasMore = visibleCount < posts.length;
-  const loadMore = () => setVisibleCount((c) => Math.min(c + PAGE_SIZE, posts.length));
+  const loadMore = () => setVisibleCount((c) => Math.min(c + pageSize, posts.length));
 
   return (
     <>
@@ -73,7 +79,7 @@ export function MoreNewsSection({ posts }: MoreNewsSectionProps) {
             onClick={loadMore}
             aria-label="Load more news"
           >
-            More News
+            {buttonText}
           </button>
         ) : posts.length > PAGE_SIZE ? (
           <span className="mvp-inf-more-but" aria-hidden="true">
