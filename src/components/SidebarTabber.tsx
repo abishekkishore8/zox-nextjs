@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect } from "react";
-import type { Post } from "@/lib/data";
+import type { Post } from "@/lib/data-adapter";
 
 interface SidebarTabberProps {
   latest: Post[];

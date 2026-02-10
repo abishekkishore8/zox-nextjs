@@ -1,9 +1,15 @@
 import Link from "next/link";
-import { getPostsByCategory } from "@/lib/data";
+import { getPostsByCategory, getStartupEvents } from "@/lib/data-adapter";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { MoreNewsSection } from "@/components/MoreNewsSection";
 import { siteConfig } from "@/lib/config";
+
+// Enable ISR - regenerate pages every hour
+export const revalidate = 3600; // 1 hour
+
+// Allow dynamic params for sectors not pre-generated
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -22,7 +28,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function SectorPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const posts = getPostsByCategory(slug, 100);
+    const posts = await getPostsByCategory(slug, 100);
+    const startupEvents = await getStartupEvents();
 
     const sectorItem = siteConfig.menu
         .find(item => item.label === "SECTORS")
@@ -97,7 +104,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                         {/* Sidebar - matches live site structure */}
                         <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
                             <StickySidebarContent>
-                                <StartupEventsSection />
+                                <StartupEventsSection events={startupEvents} />
                             </StickySidebarContent>
                         </div>
                     </div>

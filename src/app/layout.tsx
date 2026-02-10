@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { ThemeScript } from "@/components/ThemeScript";
 import { siteConfig } from "@/lib/config";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: siteConfig.name,
@@ -30,25 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <FlyMenuProvider>
-          <FlyMenu />
-          <div id="mvp-site" className="left relative">
-            <SearchOverlay />
-            <div id="mvp-site-wall" className="left relative">
-              <div id="mvp-site-main" className="left relative">
-                <Header />
-                <div id="mvp-main-body-wrap" className="left relative" style={{ marginTop: "20px" }}>
-                  {children}
-                </div>
-                <Footer />
-              </div>
-            </div>
-          </div>
-          <div className="mvp-fly-top back-to-top">
-            <i className="fa fa-angle-up fa-3"></i>
-          </div>
-          <FlyMenuFade />
-        </FlyMenuProvider>
+        <ConditionalLayout>
+          {children}
+        </ConditionalLayout>
         <ThemeScript />
       </body>
     </html>

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAllPosts } from "@/lib/data";
+import { getAllPosts } from "@/lib/data-adapter";
 // import { Sidebar } from "@/components/Sidebar"; // Unused
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
-  const allPosts = getAllPosts();
+  const allPosts = await getAllPosts();
   const posts = q
     ? allPosts.filter(
       (p) =>

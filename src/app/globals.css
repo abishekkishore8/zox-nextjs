@@ -1703,9 +1703,11 @@ button.mvp-fly-but-wrap.mvp-fly-open span:nth-child(3) {
   clear: both;
 }
 
-#mvp-home-widget-wrap {
+#mvp-home-widget-wrap,
+.mvp-home-widget-block {
   overflow: hidden;
   clear: both;
+  width: 100%;
 }
 
 .mvp-widget-home {

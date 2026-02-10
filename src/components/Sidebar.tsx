@@ -1,4 +1,4 @@
-import { getTrendingPosts, getFeat1ListPosts, getVideoPosts } from "@/lib/data";
+import { getTrendingPosts, getFeat1ListPosts, getVideoPosts } from "@/lib/data-adapter";
 import { SidebarTabber } from "@/components/SidebarTabber";
 
 interface SidebarProps {
@@ -6,10 +6,11 @@ interface SidebarProps {
 }
 
 /** Theme sidebar: Tabber (Latest, Trending, Videos) + optional ad. Used on single post, news, category, search. */
-export function Sidebar({ excludeIds = [] }: SidebarProps) {
-  const latest = getFeat1ListPosts(excludeIds).slice(0, 10);
-  const trending = getTrendingPosts();
-  const videos = getVideoPosts(10).length > 0 ? getVideoPosts(10) : getFeat1ListPosts(excludeIds).slice(0, 6);
+export async function Sidebar({ excludeIds = [] }: SidebarProps) {
+  const latest = (await getFeat1ListPosts(excludeIds)).slice(0, 10);
+  const trending = await getTrendingPosts();
+  const videoPosts = await getVideoPosts(10);
+  const videos = videoPosts.length > 0 ? videoPosts : (await getFeat1ListPosts(excludeIds)).slice(0, 6);
 
   return (
     <>

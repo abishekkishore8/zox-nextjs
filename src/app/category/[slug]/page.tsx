@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getPostsByCategory, getCategorySectionPosts } from "@/lib/data";
+import { getPostsByCategory, getCategorySectionPosts, getStartupEvents } from "@/lib/data-adapter";
 import { notFound } from "next/navigation";
 // import { Sidebar } from "@/components/Sidebar"; // Unused
 import { StickySidebarContent } from "@/components/StickySidebarContent";
@@ -10,19 +10,26 @@ interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Enable ISR - regenerate pages every hour
+export const revalidate = 3600; // 1 hour
+
+// Allow dynamic params for categories not pre-generated
+export const dynamicParams = true;
+
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const posts = getPostsByCategory(slug, 20);
+  const posts = await getPostsByCategory(slug, 20);
   const title = slug.charAt(0).toUpperCase() + slug.slice(1);
 
   if (posts.length === 0) {
     notFound();
   }
 
-  const section = getCategorySectionPosts(slug);
+  const section = await getCategorySectionPosts(slug);
   const featPost = section.featured;
   const rightPosts = section.right;
   const listPosts = posts.slice(0, 20);
+  const startupEvents = await getStartupEvents();
 
   return (
     <div className="mvp-main-blog-wrap left relative">
@@ -85,9 +92,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                               <Image
                                 src={rightPosts[0].imageSmall || rightPosts[0].image}
                                 alt={rightPosts[0].title}
+                                className="mvp-mob-img"
                                 width={330}
                                 height={200}
-                                className="mvp-mob-img"
                                 style={{ width: "100%", height: "auto", objectFit: "cover" }}
                               />
                             </div>
@@ -116,9 +123,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                               <Image
                                 src={rightPosts[1].imageSmall || rightPosts[1].image}
                                 alt={rightPosts[1].title}
+                                className="mvp-mob-img"
                                 width={330}
                                 height={200}
-                                className="mvp-mob-img"
                                 style={{ width: "100%", height: "auto", objectFit: "cover" }}
                               />
                             </div>
@@ -190,7 +197,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
             <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
               <StickySidebarContent>
-                <StartupEventsSection />
+                <StartupEventsSection events={startupEvents} />
               </StickySidebarContent>
             </div>
           </div>

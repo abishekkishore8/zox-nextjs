@@ -1,12 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAllPosts } from "@/lib/data";
+import { getAllPosts } from "@/lib/data-adapter";
 // import { Sidebar } from "@/components/Sidebar"; // Unused
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 
-export default function NewsPage() {
-  const posts = getAllPosts();
+export default async function NewsPage() {
+  const posts = await getAllPosts();
 
   return (
     <div className="mvp-main-blog-wrap left relative mvp-main-blog-marg">

@@ -1,13 +1,13 @@
 import Image from "next/image";
-import { getEventsByRegion, EVENTS_REGION_ORDER, getEventImage } from "@/lib/data";
+import { getEventsByRegion, EVENTS_REGION_ORDER, getEventImage } from "@/lib/data-adapter";
 
 export const metadata = {
   title: "Events by Country - StartupNews.fyi",
   description: "Startup and technology events by country and city.",
 };
 
-export default function EventByCountryPage() {
-  const eventsByRegion = getEventsByRegion();
+export default async function EventByCountryPage() {
+  const eventsByRegion = await getEventsByRegion();
 
   return (
     <div className="mvp-main-blog-wrap left relative mvp-main-blog-marg event-by-country-page">
@@ -26,7 +26,7 @@ export default function EventByCountryPage() {
                       <h2 className="event-by-country-region">{`Events In ${region}`}</h2>
                       <ul className="event-by-country-list">
                         {events.map((event) => (
-                          <li key={event.url} className="event-by-country-card">
+                          <li key={event.url || event.id} className="event-by-country-card">
                             <a
                               href={event.url}
                               target="_blank"

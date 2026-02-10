@@ -1,6 +1,6 @@
 "use client";
 
-import { StartupEvent } from "@/lib/data";
+import type { StartupEvent } from "@/lib/data-adapter";
 
 interface EventCardProps {
   event: StartupEvent;

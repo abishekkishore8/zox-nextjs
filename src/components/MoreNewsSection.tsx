@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { Post } from "@/lib/data";
+import type { Post } from "@/lib/data-adapter";
 
 const PAGE_SIZE = 10;
 

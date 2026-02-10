@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { Post } from "@/lib/data";
+import type { Post } from "@/lib/data-adapter";
 
 interface HomeWidgetSectionProps {
   title: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Post } from "@/lib/data";
+import type { Post } from "@/lib/data-adapter";
 import { FullArticle } from "@/components/FullArticle";
 
 interface InfiniteArticleLoaderProps {

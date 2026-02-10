@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { startupEvents } from "@/lib/data";
+import type { StartupEvent } from "@/lib/data-adapter";
 
-export function StartupEventsSection() {
+interface StartupEventsSectionProps {
+  events: StartupEvent[];
+}
+
+export function StartupEventsSection({ events }: StartupEventsSectionProps) {
   return (
     <div className="mvp-feat1-list-wrap left relative startup-events-wrap">
       <h3 className="mvp-feat1-pop-head">
@@ -10,8 +14,8 @@ export function StartupEventsSection() {
         </Link>
       </h3>
       <div id="mvp-feat-tab-col1" className="mvp-feat1-list left relative mvp-tab-col-cont startup-events-list" style={{ display: "block" }}>
-        {startupEvents.slice(0, 17).map((event) => (
-          <a key={event.url} href={event.url} rel="noopener noreferrer bookmark" target="_blank" className="startup-events-item">
+        {events.slice(0, 17).map((event) => (
+          <a key={event.url || event.id} href={event.url} rel="noopener noreferrer bookmark" target="_blank" className="startup-events-item">
             <div className="mvp-feat1-list-cont left relative">
               <div className="mvp-feat1-list-text">
                 <div className="mvp-cat-date-wrap left relative">

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getEventsByRegion, getEventImage, EVENTS_REGION_ORDER } from "@/lib/data";
+import { getEventsByRegion, getEventImage, EVENTS_REGION_ORDER } from "@/lib/data-adapter";
 
 // Helper to convert region name to slug (e.g. "Delhi NCR" -> "delhi-ncr")
 function slugify(text: string) {
@@ -12,12 +12,20 @@ function getRegionFromSlug(slug: string) {
     return EVENTS_REGION_ORDER.find((r) => slugify(r) === slug);
 }
 
-// Generate static params for all known regions
+// Generate static params for all known regions (limited to prevent excessive generation)
 export function generateStaticParams() {
+    // Only pre-generate pages for known regions from config
+    // This prevents generating pages for every possible slug
     return EVENTS_REGION_ORDER.map((region) => ({
         slug: slugify(region),
     }));
 }
+
+// Enable ISR - regenerate pages every hour
+export const revalidate = 3600; // 1 hour
+
+// Don't allow dynamic params - only known regions should be accessible
+export const dynamicParams = false;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -43,7 +51,7 @@ export default async function RegionEventsPage({ params }: { params: Promise<{ s
         notFound();
     }
 
-    const eventsByRegion = getEventsByRegion();
+    const eventsByRegion = await getEventsByRegion();
     const upcomingEvents = eventsByRegion[region] || [];
 
     // Generate some consistent mock past events based on the region
@@ -80,7 +88,7 @@ export default async function RegionEventsPage({ params }: { params: Promise<{ s
                                     {upcomingEvents.length > 0 ? (
                                         <ul className="event-by-country-list">
                                             {upcomingEvents.map((event) => (
-                                                <li key={event.url} className="event-by-country-card">
+                                                <li key={event.url || event.id} className="event-by-country-card">
                                                     <a
                                                         href={event.url}
                                                         target="_blank"

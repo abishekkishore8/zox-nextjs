@@ -8,8 +8,8 @@ import {
   getDarkSectionPosts,
   getFeat1SectionPosts,
   getPostsByCategory,
-  startupEvents,
-} from "@/lib/data";
+  getStartupEvents,
+} from "@/lib/data-adapter";
 import { HomeWidgetSection } from "@/components/HomeWidgetSection";
 import { HomeDarkSection } from "@/components/HomeDarkSection";
 import { HomeFeat1Section } from "@/components/HomeFeat1Section";
@@ -18,51 +18,52 @@ import { StartupEventsSection } from "@/components/StartupEventsSection";
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { EventCard } from "@/components/EventCard";
 
-export default function HomePage() {
-  const { main, sub } = getFeat1LeftPosts();
-  const trending = getTrendingPosts();
-  const moreNews = getMoreNewsPosts([main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]);
+export default async function HomePage() {
+  const { main, sub } = await getFeat1LeftPosts();
+  const trending = await getTrendingPosts();
+  const moreNews = await getMoreNewsPosts([main.id, sub[0].id, sub[1].id, ...trending.map((p) => p.id)]);
+  const startupEvents = await getStartupEvents();
 
-  const aiDeeptechSection = getCategorySectionPosts("ai-deeptech");
-  const fintechSection = getDarkSectionPosts("fintech");
-  const socialMediaSection = getCategorySectionPosts("social-media");
-  const evMobilitySection = getFeat1SectionPosts("ev-mobility");
+  const aiDeeptechSection = await getCategorySectionPosts("ai-deeptech");
+  const fintechSection = await getDarkSectionPosts("fintech");
+  const socialMediaSection = await getCategorySectionPosts("social-media");
+  const evMobilitySection = await getFeat1SectionPosts("ev-mobility");
 
   // Block 2 fetching
-  const agritechSection = getCategorySectionPosts("agritech");
-  const ecommerceSection = getDarkSectionPosts("ecommerce");
-  const web3Section = getCategorySectionPosts("web3");
-  const healthTechSection = getFeat1SectionPosts("healthtech");
+  const agritechSection = await getCategorySectionPosts("agritech");
+  const ecommerceSection = await getDarkSectionPosts("ecommerce");
+  const web3Section = await getCategorySectionPosts("web3");
+  const healthTechSection = await getFeat1SectionPosts("healthtech");
 
   // Block 3 fetching
-  const cyberSecuritySection = getCategorySectionPosts("cyber-security");
-  const spaceTechSection = getDarkSectionPosts("spacetech");
-  const foodTechSection = getCategorySectionPosts("foodtech");
-  const edTechSection = getFeat1SectionPosts("edtech");
+  const cyberSecuritySection = await getCategorySectionPosts("cyber-security");
+  const spaceTechSection = await getDarkSectionPosts("spacetech");
+  const foodTechSection = await getCategorySectionPosts("foodtech");
+  const edTechSection = await getFeat1SectionPosts("edtech");
 
   // Combine posts for mobile "Latest News" section
   const latestNewsPosts = [main, sub[0], sub[1], ...trending, ...moreNews.slice(0, 15)];
 
   // Get AI & DeepTech category posts for mobile section (6 total: 2 featured + 4 regular)
-  const aiDeepTechPosts = getPostsByCategory("tech", 6);
+  const aiDeepTechPosts = await getPostsByCategory("tech", 6);
   const aiDeepTechFeatured1 = aiDeepTechPosts[0] || null;
   const aiDeepTechFeatured2 = aiDeepTechPosts[1] || null;
   const aiDeepTechList = aiDeepTechPosts.slice(2, 6);
 
   // Get Fintech category posts for mobile section (6 total: 2 featured + 4 regular)
-  const fintechPosts = getPostsByCategory("fintech", 6);
+  const fintechPosts = await getPostsByCategory("fintech", 6);
   const fintechFeatured1 = fintechPosts[0] || null;
   const fintechFeatured2 = fintechPosts[1] || null;
   const fintechList = fintechPosts.slice(2, 6);
 
   // Get Social Media category posts for mobile section (6 total: 2 featured + 4 regular)
-  const socialMediaPosts = getPostsByCategory("social-media", 6);
+  const socialMediaPosts = await getPostsByCategory("social-media", 6);
   const socialMediaFeatured1 = socialMediaPosts[0] || null;
   const socialMediaFeatured2 = socialMediaPosts[1] || null;
   const socialMediaList = socialMediaPosts.slice(2, 6);
 
   // Get EV & Mobility category posts for mobile section (6 total: 2 featured + 4 regular)
-  const evMobilityPosts = getPostsByCategory("ev-mobility", 6);
+  const evMobilityPosts = await getPostsByCategory("ev-mobility", 6);
   const evMobilityFeatured1 = evMobilityPosts[0] || null;
   const evMobilityFeatured2 = evMobilityPosts[1] || null;
   const evMobilityList = evMobilityPosts.slice(2, 6);
@@ -176,7 +177,7 @@ export default function HomePage() {
           <h2 className="startupnews-mobile-events-title">Startup Events</h2>
           <ul className="startupnews-events-list">
             {startupEvents.slice(0, 4).map((event) => (
-              <EventCard key={event.url} event={event} />
+              <EventCard key={event.url || event.id} event={event} />
             ))}
           </ul>
         </div>
@@ -650,9 +651,9 @@ export default function HomePage() {
                           <Image
                             src={sub[0].imageSmall || sub[0].image}
                             alt={sub[0].title}
+                            className="mvp-mob-img"
                             width={330}
                             height={200}
-                            className="mvp-mob-img"
                             style={{ width: "100%", height: "auto", objectFit: "cover" }}
                           />
                         </div>
@@ -679,9 +680,9 @@ export default function HomePage() {
                           <Image
                             src={sub[1].imageSmall || sub[1].image}
                             alt={sub[1].title}
+                            className="mvp-mob-img"
                             width={330}
                             height={200}
-                            className="mvp-mob-img"
                             style={{ width: "100%", height: "auto", objectFit: "cover" }}
                           />
                         </div>
@@ -745,14 +746,14 @@ export default function HomePage() {
                   Ad placeholder
                 </div>
               </div>
-              <StartupEventsSection />
+              <StartupEventsSection events={startupEvents} />
             </div>
           </div>
         </section>
       </div>
 
       {/* Homepage widget sections Block 1: AI & Deeptech, Fintech, Social Media, EV & Mobility */}
-      <div id="mvp-home-widget-wrap" className="left relative startupnews-desktop-featured">
+      <div id="mvp-home-widget-wrap" className="mvp-home-widget-block left relative startupnews-desktop-featured">
         <HomeWidgetSection
           title="AI & Deeptech"
           categorySlug="ai-deeptech"
@@ -781,7 +782,7 @@ export default function HomePage() {
       </div>
 
       {/* Homepage widget sections Block 2: Agritech, Ecommerce, Web3, HealthTech */}
-      <div id="mvp-home-widget-wrap-2" className="left relative" style={{ marginTop: "20px" }}>
+      <div className="mvp-home-widget-block left relative startupnews-desktop-featured">
         <HomeWidgetSection
           title="Agritech"
           categorySlug="agritech"
@@ -809,14 +810,32 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Homepage widget sections Block 3: Cyber Security */}
-      <div id="mvp-home-widget-wrap-3" className="left relative" style={{ marginTop: "40px" }}>
+      {/* Homepage widget sections Block 3: Cyber Security, SpaceTech, FoodTech, EdTech */}
+      <div className="mvp-home-widget-block left relative startupnews-desktop-featured">
         <HomeWidgetSection
           title="Cyber Security"
           categorySlug="cyber-security"
           featured={cyberSecuritySection.featured}
           right={cyberSecuritySection.right}
           list={cyberSecuritySection.list}
+        />
+        <HomeDarkSection
+          title="SpaceTech"
+          featured={spaceTechSection.featured}
+          list={spaceTechSection.list}
+        />
+        <HomeWidgetSection
+          title="FoodTech"
+          categorySlug="foodtech"
+          featured={foodTechSection.featured}
+          right={foodTechSection.right}
+          list={foodTechSection.list}
+          mainpos="middle"
+        />
+        <HomeFeat1Section
+          title="EdTech"
+          top={edTechSection.top}
+          bottom={edTechSection.bottom}
         />
       </div>
 
@@ -837,7 +856,7 @@ export default function HomePage() {
               </div>
               <div id="mvp-side-wrap" className="left relative">
                 <StickySidebarContent>
-                  <StartupEventsSection />
+                  <StartupEventsSection events={startupEvents} />
                 </StickySidebarContent>
               </div>
             </div>
