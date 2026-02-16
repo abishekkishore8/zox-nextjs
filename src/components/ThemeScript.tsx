@@ -4,10 +4,6 @@ import { useEffect } from "react";
 
 export function ThemeScript() {
   useEffect(() => {
-    const searchClick = () => {
-      document.getElementById("mvp-search-wrap")?.classList.toggle("mvp-search-toggle");
-    };
-
     const backToTop = (e: Event) => {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -15,10 +11,7 @@ export function ThemeScript() {
 
     const onBodyClick = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (target.closest(".mvp-search-click")) {
-        e.preventDefault();
-        searchClick();
-      } else if (target.closest(".back-to-top")) {
+      if (target.closest(".back-to-top")) {
         backToTop(e);
       }
     };

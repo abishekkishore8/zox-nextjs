@@ -1,12 +1,15 @@
 import Link from "next/link";
-import Image from "next/image";
-import { getAllPosts } from "@/lib/data-adapter";
+import { PostImage } from "@/components/PostImage";
+import { getMoreNewsPosts, getStartupEvents, hasThumbnail } from "@/lib/data-adapter";
 // import { Sidebar } from "@/components/Sidebar"; // Unused
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 
 export default async function NewsPage() {
-  const posts = await getAllPosts();
+  const [posts, events] = await Promise.all([
+    getMoreNewsPosts([]),
+    getStartupEvents(),
+  ]);
 
   return (
     <div className="mvp-main-blog-wrap left relative mvp-main-blog-marg">
@@ -16,35 +19,30 @@ export default async function NewsPage() {
             <div className="mvp-main-blog-in">
               <div className="mvp-main-blog-body left relative">
                 <ul className="mvp-blog-story-list left relative infinite-content">
-                  {posts.map((post) => (
+                  {posts.filter(hasThumbnail).map((post) => (
                     <li key={post.id} className="mvp-blog-story-wrap left relative infinite-post">
                       <Link href={`/post/${post.slug}`} rel="bookmark">
                         <div className="mvp-blog-story-out relative">
-                          <div className="mvp-blog-story-img left relative">
-                            <Image
-                              src={post.image}
+                          {hasThumbnail(post) && (
+                            <div className="mvp-blog-story-img left relative">
+                              <PostImage
+                                src={post.image || ''}
                               alt={post.title}
-                              className="mvp-reg-img mvp-big-img"
                               width={800}
                               height={500}
-                            />
-                            <Image
-                              src={post.imageSmall || post.image}
-                              alt={post.title}
-                              className="mvp-mob-img"
-                              width={330}
-                              height={200}
                               style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                            />
-                          </div>
+                                sizes="(max-width: 767px) 100vw, 800px"
+                              />
+                            </div>
+                          )}
                           <div className="mvp-blog-story-in">
                             <div className="mvp-blog-story-text left relative">
                               <div className="mvp-cat-date-wrap left relative">
                                 <span className="mvp-cd-cat left relative">{post.category}</span>
                                 <span className="mvp-cd-date left relative">{post.timeAgo}</span>
                               </div>
-                              <h2>{post.title}</h2>
-                              <p>{post.excerpt}</p>
+                              <h2 className="post-heading-max-3-lines">{post.title}</h2>
+                              <p className="post-card-excerpt-max-3-lines">{post.excerpt}</p>
                             </div>
                           </div>
                         </div>
@@ -64,7 +62,7 @@ export default async function NewsPage() {
             </div>
             <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
               <StickySidebarContent>
-                <StartupEventsSection />
+                <StartupEventsSection events={events} />
               </StickySidebarContent>
             </div>
           </div>

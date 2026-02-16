@@ -88,11 +88,31 @@ export class AuthService {
   hasRole(user: User, requiredRole: 'admin' | 'editor' | 'author'): boolean {
     const roleHierarchy: Record<string, number> = {
       admin: 3,
+      administrator: 3, // alias for admin
       editor: 2,
       author: 1,
     };
 
-    return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+    // Normalize role to lowercase for comparison (defensive)
+    let userRole = (user.role || '').toLowerCase().trim();
+    if (userRole === 'administrator') userRole = 'admin';
+    const requiredRoleLower = (requiredRole || '').toLowerCase().trim();
+
+    // Check if roles are valid
+    if (!userRole || !roleHierarchy[userRole]) {
+      console.warn(`[Auth] Invalid user role: "${user.role}" (normalized: "${userRole}")`);
+      return false;
+    }
+
+    if (!requiredRoleLower || !roleHierarchy[requiredRoleLower]) {
+      console.warn(`[Auth] Invalid required role: "${requiredRole}" (normalized: "${requiredRoleLower}")`);
+      return false;
+    }
+
+    const userRoleLevel = roleHierarchy[userRole];
+    const requiredRoleLevel = roleHierarchy[requiredRoleLower];
+
+    return userRoleLevel >= requiredRoleLevel;
   }
 
   /**

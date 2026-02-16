@@ -29,15 +29,28 @@ export interface UseAdminDataReturn<T> {
   error: string | null;
   refetch: () => Promise<void>;
   pagination: PaginationMeta | null;
+  search: string;
+  filters: Record<string, string | number | boolean | null>;
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
   setSearch: (search: string) => void;
-  setFilters: (filters: Record<string, string | number | boolean | null>) => void;
+  setFilters: (
+    filters: Record<string, string | number | boolean | null> |
+    ((prev: Record<string, string | number | boolean | null>) => Record<string, string | number | boolean | null>)
+  ) => void;
 }
 
 // Simple in-memory cache
 const cache = new Map<string, { data: unknown[]; timestamp: number; meta?: PaginationMeta }>();
 const CACHE_DURATION = 30000; // 30 seconds
+const REQUEST_TIMEOUT_MS = 35000; // 35s production - allow for network + DB latency
+const REQUEST_TIMEOUT_LOCALHOST_MS = 45000; // 45s localhost - allow cold DB / Redis to connect
+
+function getRequestTimeoutMs(): number {
+  if (typeof window === 'undefined') return REQUEST_TIMEOUT_MS;
+  const host = window.location?.hostname || '';
+  return host === 'localhost' || host === '127.0.0.1' ? REQUEST_TIMEOUT_LOCALHOST_MS : REQUEST_TIMEOUT_MS;
+}
 
 export function useAdminData<T = unknown>({
   endpoint,
@@ -57,6 +70,7 @@ export function useAdminData<T = unknown>({
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortedByTimeoutRef = useRef(false);
 
   const buildUrl = useCallback(() => {
     const url = new URL(endpoint, window.location.origin);
@@ -104,8 +118,16 @@ export function useAdminData<T = unknown>({
       abortControllerRef.current.abort();
     }
 
-    abortControllerRef.current = new AbortController();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     const cacheKey = buildUrl();
+
+    // Request timeout so we don't hang forever (longer on localhost for cold DB/Redis)
+    const timeoutMs = getRequestTimeoutMs();
+    const timeoutId = setTimeout(() => {
+      abortedByTimeoutRef.current = true;
+      controller.abort();
+    }, timeoutMs);
 
     // Check cache
     const cached = cache.get(cacheKey);
@@ -123,11 +145,20 @@ export function useAdminData<T = unknown>({
     try {
       const response = await fetch(cacheKey, {
         headers: getAuthHeaders(),
-        signal: abortControllerRef.current.signal,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const status = response.status;
+        if (status === 401) {
+          throw new Error('Session expired or not logged in. Please log in again.');
+        }
+        if (status === 403) {
+          throw new Error('You do not have permission to view this.');
+        }
+        throw new Error(`Request failed (${status}). Try again or log in again.`);
       }
 
       const result: ApiResponse<T[]> = await response.json();
@@ -156,8 +187,15 @@ export function useAdminData<T = unknown>({
 
       onSuccess?.(result.data);
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
       if (err instanceof Error && err.name === 'AbortError') {
-        return; // Request was cancelled
+        // Only show timeout message when the abort was due to actual timeout, not a newer request
+        if (abortedByTimeoutRef.current) {
+          abortedByTimeoutRef.current = false;
+          setError('Request timed out. Check your connection and try again.');
+          onError?.('Request timed out.');
+        }
+        return;
       }
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while fetching data';
       setError(errorMessage);
@@ -167,15 +205,14 @@ export function useAdminData<T = unknown>({
     }
   }, [enabled, buildUrl, onSuccess, onError]);
 
-  // Debounced search
+  // Debounced search: only reset to page 1 when search term changes (do not depend on fetchData or page changes)
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
     searchTimeoutRef.current = setTimeout(() => {
-      setPage(1); // Reset to first page on search
-      fetchData();
+      setPage(1); // Reset to first page on search; main fetch effect will run when page updates
     }, 300);
 
     return () => {
@@ -183,20 +220,14 @@ export function useAdminData<T = unknown>({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [search, fetchData]);
+  }, [search]);
 
-  // Fetch on page/limit/filters change
+  // Single effect: fetch when page, limit, filters, or fetchData (which depends on enabled/buildUrl) change
   useEffect(() => {
-    fetchData();
-  }, [page, currentLimit, filters, fetchData]);
-
-  // Initial fetch
-  useEffect(() => {
-    if (enabled && !search) {
+    if (enabled) {
       fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
+  }, [enabled, page, currentLimit, filters, fetchData]);
 
   // Cleanup
   useEffect(() => {
@@ -228,8 +259,11 @@ export function useAdminData<T = unknown>({
     setPage(1);
   }, []);
 
-  const handleSetFilters = useCallback((newFilters: Record<string, string | number | boolean | null>) => {
-    setFilters(newFilters);
+  const handleSetFilters = useCallback((
+    newFiltersOrUpdater: Record<string, string | number | boolean | null> |
+    ((prev: Record<string, string | number | boolean | null>) => Record<string, string | number | boolean | null>)
+  ) => {
+    setFilters(newFiltersOrUpdater);
     setPage(1);
   }, []);
 
@@ -239,6 +273,8 @@ export function useAdminData<T = unknown>({
     error,
     refetch,
     pagination,
+    search,
+    filters,
     setPage: handleSetPage,
     setLimit: handleSetLimit,
     setSearch,

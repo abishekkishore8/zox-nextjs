@@ -1,16 +1,44 @@
 import { PostsRepository } from '../repository/posts.repository';
 import { PostEntity } from '../domain/types';
-import { getCache, setCache, deleteCache } from '@/shared/cache/redis.client';
+import { getCache, setCache, deleteCache, invalidatePostsListCache } from '@/shared/cache/redis.client';
 import { CategoriesService } from '@/modules/categories/service/categories.service';
+
+const UNSPLASH_PREFIX = 'https://images.unsplash.com/';
+
+/** Post can be published only when it has body (content) and at least one real image (featured or <img> in content). No image or Unsplash placeholder => must stay draft. */
+function canPublishPost(content: string | null | undefined, featuredImageUrl: string | null | undefined): boolean {
+  const hasBody = typeof content === 'string' && content.trim().length > 0;
+  const featuredUrl = typeof featuredImageUrl === 'string' ? featuredImageUrl.trim() : '';
+  const hasFeatured = featuredUrl.length > 0 && !featuredUrl.startsWith(UNSPLASH_PREFIX);
+  const hasImgInContent = hasBody && content!.includes('<img');
+  return hasBody && (hasFeatured || hasImgInContent);
+}
+
+/** Allow posts with any real thumbnail: S3 or external (RSS). Exclude only empty and Unsplash placeholder so images show. */
+function hasValidThumbnail(entity: PostEntity | Record<string, unknown>): boolean {
+  const url =
+    (entity as PostEntity).featured_image_url ??
+    (entity as Record<string, unknown>)['featured_image_url'];
+  if (url == null || typeof url !== 'string') return false;
+  const s = String(url).trim();
+  if (s === '') return false;
+  if (s.startsWith(UNSPLASH_PREFIX)) return false;
+  return true;
+}
+
+function filterValidThumbnails<T extends PostEntity | Record<string, unknown>>(entities: T[]): T[] {
+  return entities.filter((e) => hasValidThumbnail(e));
+}
 
 export class PostsService {
   constructor(
     private repository: PostsRepository,
     private categoriesService?: CategoriesService
-  ) {}
+  ) { }
 
   /**
-   * Get all posts with optional filters
+   * Get all posts with optional filters.
+   * When forAdmin is true, returns all posts (no thumbnail restriction, no cache) for admin list.
    */
   async getAllPosts(filters?: {
     categorySlug?: string;
@@ -19,12 +47,16 @@ export class PostsService {
     limit?: number;
     offset?: number;
     search?: string;
+    source?: 'manual' | 'rss';
+    forAdmin?: boolean;
   }): Promise<PostEntity[]> {
-    const cacheKey = `posts:all:${JSON.stringify(filters)}`;
-    
-    // Try cache first
-    const cached = await getCache<PostEntity[]>(cacheKey);
-    if (cached) return cached;
+    const forAdmin = filters?.forAdmin === true;
+    const cacheKey = forAdmin ? `posts:admin:${JSON.stringify(filters)}` : `posts:all:${JSON.stringify(filters)}`;
+
+    if (!forAdmin) {
+      const cached = await getCache<PostEntity[]>(cacheKey);
+      if (cached) return cached;
+    }
 
     // If category slug provided, need to resolve category ID
     let categoryId: number | undefined;
@@ -33,7 +65,6 @@ export class PostsService {
         const id = await this.categoriesService.getCategoryIdBySlug(filters.categorySlug);
         categoryId = id ?? undefined;
       } else {
-        // Fallback to direct query if categories service not available
         const { query } = await import('@/shared/database/connection');
         const category = await query<{ id: number }>('SELECT id FROM categories WHERE slug = ?', [filters.categorySlug]);
         categoryId = category[0]?.id;
@@ -44,10 +75,13 @@ export class PostsService {
       ...filters,
       categoryId,
       search: filters?.search,
+      restrictThumbnail: !forAdmin,
     });
 
-    // Cache for 5 minutes
-    await setCache(cacheKey, posts, 300);
+    if (forAdmin) {
+      return posts;
+    }
+    await setCache(cacheKey, posts, 60);
     return posts;
   }
 
@@ -56,7 +90,7 @@ export class PostsService {
    */
   async getPostBySlug(slug: string): Promise<PostEntity | null> {
     const cacheKey = `post:slug:${slug}`;
-    
+
     const cached = await getCache<PostEntity>(cacheKey);
     if (cached) return cached;
 
@@ -68,6 +102,13 @@ export class PostsService {
   }
 
   /**
+   * Get original article URL for a post (from RSS feed item when applicable).
+   */
+  async getSourceLinkByPostId(postId: number): Promise<string | null> {
+    return this.repository.getSourceLinkByPostId(postId);
+  }
+
+  /**
    * Get posts by category slug
    */
   async getPostsByCategory(categorySlug: string, limit: number = 10): Promise<PostEntity[]> {
@@ -75,18 +116,42 @@ export class PostsService {
   }
 
   /**
-   * Get featured posts
+   * Get featured posts = latest from all categories (for "Latest News" section)
    */
   async getFeaturedPosts(limit: number = 5): Promise<PostEntity[]> {
-    return this.repository.findFeatured(limit);
+    return this.repository.findLatest(limit);
   }
 
   /**
-   * Get trending posts
+   * Get latest posts for listing without requiring S3 featured_image (for Latest News cards).
+   * Caller should run entitiesToPosts then onlyPostsWithImage so thumbnails from content are included.
+   */
+  async getLatestPostsForListing(limit: number = 25): Promise<PostEntity[]> {
+    return this.repository.findLatestForListing(limit);
+  }
+
+  /**
+   * Get latest posts excluding given IDs (for "More News" after featured)
+   */
+  async getLatestPostsExcluding(limit: number, excludeIds: (number | string)[] = []): Promise<PostEntity[]> {
+    const excludeNums = excludeIds.map((id) => (typeof id === 'string' ? parseInt(id, 10) : id)).filter((id) => !isNaN(id));
+    return this.repository.findLatestExcluding(limit, excludeNums);
+  }
+
+  /**
+   * Get latest post slugs excluding given IDs (optimized for infinite loader)
+   */
+  async getLatestPostSlugsExcluding(limit: number, excludeIds: (number | string)[] = []): Promise<string[]> {
+    const excludeNums = excludeIds.map((id) => (typeof id === 'string' ? parseInt(id, 10) : id)).filter((id) => !isNaN(id));
+    const result = await this.repository.findLatestSlugsExcluding(limit, excludeNums);
+    return result.map((r) => r.slug);
+  }
+
+  /**
+   * Get trending posts = next latest after featured (same as latest excluding featured IDs)
    */
   async getTrendingPosts(limit: number = 5, excludeIds: (number | string)[] = []): Promise<PostEntity[]> {
-    const excludeNums = excludeIds.map(id => typeof id === 'string' ? parseInt(id) : id).filter(id => !isNaN(id));
-    return this.repository.findTrending(limit, excludeNums);
+    return this.getLatestPostsExcluding(limit, excludeIds);
   }
 
   /**
@@ -125,17 +190,7 @@ export class PostsService {
    * Get previous/next posts
    */
   async getPrevNextPosts(currentSlug: string): Promise<{ prev: PostEntity | null; next: PostEntity | null }> {
-    const allPosts = await this.repository.findAll({ status: 'published' });
-    const currentIndex = allPosts.findIndex((p) => p.slug === currentSlug);
-
-    if (currentIndex < 0) {
-      return { prev: null, next: null };
-    }
-
-    const prev = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
-    const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
-
-    return { prev, next };
+    return this.repository.findPrevNextBySlug(currentSlug);
   }
 
   /**
@@ -163,7 +218,7 @@ export class PostsService {
     featuredImageUrl?: string;
     featuredImageSmallUrl?: string;
     format?: "standard" | "video" | "gallery";
-    status?: "draft" | "published";
+    status?: "draft" | "published" | "archived";
     featured?: boolean;
   }): Promise<PostEntity> {
     // Check if slug exists
@@ -180,11 +235,17 @@ export class PostsService {
       }
     }
 
-    const entity = await this.repository.create(data);
-    
+    // Do not publish if post has no body or no image; save as draft instead
+    const createData = { ...data };
+    if (createData.status === 'published' && !canPublishPost(createData.content, createData.featuredImageUrl)) {
+      createData.status = 'draft';
+    }
+
+    const entity = await this.repository.create(createData);
+
     // Invalidate cache
     await this.invalidatePostCache();
-    
+
     return entity;
   }
 
@@ -239,21 +300,29 @@ export class PostsService {
     if (data.status !== undefined) updateData.status = data.status;
     if (data.featured !== undefined) updateData.featured = data.featured;
 
+    // Do not allow publishing if post has no body or no image; force draft
+    const effectiveContent = updateData.content !== undefined ? updateData.content : existingPost.content;
+    const effectiveFeatured = updateData.featured_image_url !== undefined ? updateData.featured_image_url : existingPost.featured_image_url;
+    const wantsPublish = data.status === 'published';
+    if (wantsPublish && !canPublishPost(effectiveContent, effectiveFeatured)) {
+      updateData.status = 'draft';
+    }
+
     // Handle published_at based on status
-    if (data.status === 'published' && existingPost.status !== 'published') {
+    if (updateData.status === 'published' && existingPost.status !== 'published') {
       updateData.published_at = new Date();
-    } else if (data.status && data.status !== 'published' && existingPost.published_at) {
+    } else if (updateData.status && updateData.status !== 'published' && existingPost.published_at) {
       updateData.published_at = null as unknown as Date; // Allow null for unpublished posts
     }
 
     const entity = await this.repository.update(id, updateData);
-    
+
     // Invalidate cache
     await this.invalidatePostCache();
     if (entity.slug) {
       await deleteCache(`post:slug:${entity.slug}`);
     }
-    
+
     return entity;
   }
 
@@ -267,7 +336,7 @@ export class PostsService {
     }
 
     await this.repository.delete(id);
-    
+
     // Invalidate cache
     await this.invalidatePostCache();
     await deleteCache(`post:slug:${post.slug}`);
@@ -277,10 +346,7 @@ export class PostsService {
    * Invalidate all post caches
    */
   private async invalidatePostCache(): Promise<void> {
-    // Clear common cache patterns
-    // In production, you might want to use cache tags for more efficient invalidation
-    // Note: Pattern-based deletion would require Redis SCAN or similar
-    // For now, cache will expire naturally
+    await invalidatePostsListCache();
   }
 }
 

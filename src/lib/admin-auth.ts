@@ -48,13 +48,16 @@ export function clearAdminSession(): void {
 }
 
 /**
- * Get authorization header for API requests
+ * Get headers for admin API requests.
+ * Sends token in both Authorization and X-Admin-Token so auth works when proxies strip Authorization on GET.
  */
 export function getAuthHeaders(): HeadersInit {
   const token = getAdminToken();
+  if (!token) return { 'Content-Type': 'application/json' };
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Authorization: `Bearer ${token}`,
+    'X-Admin-Token': token,
   };
 }
 
@@ -69,6 +72,7 @@ export async function verifyToken(): Promise<AdminUser | null> {
     const response = await fetch('/api/admin/auth/verify', {
       headers: {
         Authorization: `Bearer ${token}`,
+        'X-Admin-Token': token,
       },
     });
 

@@ -89,6 +89,6 @@ export const siteConfig = {
     },
     { label: "ADVERTISE WITH US", href: "/advertise-with-us", dividerBefore: true },
     { label: "ABOUT US", href: "/about" },
-    { label: "CONTACT US", href: "/contact" },
+    { label: "CONTACT US", href: "/contact-us" },
   ],
 };

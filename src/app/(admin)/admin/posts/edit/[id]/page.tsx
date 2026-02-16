@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthHeaders, getAdminUser } from '@/lib/admin-auth';
-import ImageUpload from '@/components/admin/ImageUpload';
+import { getAuthHeaders, getAdminUser, getAdminToken } from '@/lib/admin-auth';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 
 interface Category {
   id: number;
@@ -21,6 +21,8 @@ export default function EditPostPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null);
+  const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -114,15 +116,37 @@ export default function EditPostPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/posts/${postId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          ...formData,
-          categoryId: parseInt(formData.categoryId),
-          authorId: user.id,
-        }),
-      });
+      const token = getAdminToken();
+      let response: Response;
+      if (featuredImageFile) {
+        const form = new FormData();
+        form.append('title', formData.title);
+        form.append('slug', formData.slug);
+        form.append('excerpt', formData.excerpt);
+        form.append('content', formData.content);
+        form.append('categoryId', formData.categoryId);
+        form.append('authorId', String(user.id));
+        form.append('format', formData.format);
+        form.append('status', formData.status);
+        form.append('featured', String(formData.featured));
+        form.append('featuredImageFile', featuredImageFile);
+        if (token) form.append('_token', token);
+        response = await fetch(`/api/admin/posts/${postId}`, {
+          method: 'PUT',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        });
+      } else {
+        response = await fetch(`/api/admin/posts/${postId}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            ...formData,
+            categoryId: parseInt(formData.categoryId),
+            authorId: user.id,
+          }),
+        });
+      }
 
       const data = await response.json();
 
@@ -305,28 +329,92 @@ export default function EditPostPage() {
           }}>
             Content *
           </label>
-          <textarea
+          <RichTextEditor
             value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            required
-            rows={10}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-            }}
+            onChange={(content) => setFormData({ ...formData, content })}
+            placeholder="Write your news article content..."
+            minHeight={280}
           />
         </div>
 
-        <ImageUpload
-          value={formData.featuredImageUrl}
-          onChange={(url) => setFormData({ ...formData, featuredImageUrl: url })}
-          label="Featured Image"
-        />
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>
+            Featured Image
+          </label>
+          {(featuredImagePreview || formData.featuredImageUrl) && (
+            <div style={{ marginBottom: '1rem', position: 'relative', display: 'inline-block' }}>
+              <img
+                src={featuredImagePreview || formData.featuredImageUrl}
+                alt="Preview"
+                style={{ maxWidth: 300, maxHeight: 200, borderRadius: 4, border: '1px solid #e2e8f0' }}
+                onError={() => setFeaturedImagePreview(null)}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setFeaturedImageFile(null);
+                  setFeaturedImagePreview(null);
+                  setFormData((p) => ({ ...p, featuredImageUrl: '', featuredImageSmallUrl: '' }));
+                }}
+                style={{
+                  position: 'absolute', top: '0.5rem', right: '0.5rem',
+                  background: '#e53e3e', color: 'white', border: 'none', borderRadius: '50%',
+                  width: 24, height: 24, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <label style={{
+              padding: '0.75rem 1.5rem', background: '#667eea', color: 'white', borderRadius: 4,
+              cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, display: 'inline-block', textAlign: 'center',
+            }}>
+              {featuredImageFile ? featuredImageFile.name : 'Choose image (uploaded with post)'}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError('Image must be under 5MB');
+                      return;
+                    }
+                    setFeaturedImageFile(file);
+                    setFeaturedImagePreview(URL.createObjectURL(file));
+                    setFormData((p) => ({ ...p, featuredImageUrl: '', featuredImageSmallUrl: '' }));
+                    setError('');
+                  }
+                }}
+              />
+            </label>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <input
+                type="url"
+                value={formData.featuredImageUrl}
+                onChange={(e) => {
+                  setFormData((p) => ({
+                    ...p,
+                    featuredImageUrl: e.target.value,
+                    featuredImageSmallUrl: e.target.value || p.featuredImageSmallUrl,
+                  }));
+                  setFeaturedImageFile(null);
+                  setFeaturedImagePreview(null);
+                }}
+                placeholder="Or enter image URL"
+                style={{
+                  width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: 4, fontSize: '1rem', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: '#64748b' }}>
+            Choose a file to upload with the post (same as RSS: image is uploaded to S3 when you save). Or paste an image URL.
+          </p>
+        </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{

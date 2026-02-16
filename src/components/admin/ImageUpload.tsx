@@ -50,21 +50,85 @@ export default function ImageUpload({
       // Upload file
       // Note: Don't set Content-Type header for FormData - browser will set it with boundary
       const token = getAdminToken();
-      const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (!token) {
+        setError('Authentication required. Please login again.');
+        setUploading(false);
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = '/admin/login';
+        }, 1500);
+        return;
       }
+      
+      // Validate token format (JWT tokens are typically 3 parts separated by dots)
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        setError('Invalid authentication token format. Please login again.');
+        setUploading(false);
+        setTimeout(() => {
+          window.location.href = '/admin/login';
+        }, 1500);
+        return;
+      }
+      
+      const headers: HeadersInit = {
+        'Authorization': `Bearer ${token}`,
+      };
+      
+      // Log for debugging
+      console.log('[ImageUpload] Uploading file:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        hasToken: !!token,
+        tokenLength: token.length,
+        tokenPrefix: token.substring(0, 30) + '...',
+        tokenParts: tokenParts.length,
+      });
       
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
         headers: headers,
         body: formData,
+        credentials: 'include', // Include cookies if needed
       });
+
+      if (!response.ok) {
+        // Handle specific status codes
+        if (response.status === 401) {
+          setError('Authentication failed. Please login again.');
+          // Optionally redirect to login
+          setTimeout(() => {
+            window.location.href = '/admin/login';
+          }, 2000);
+          setUploading(false);
+          return;
+        }
+        
+        if (response.status === 403) {
+          const errorData = await response.json().catch(() => ({ error: 'Forbidden - Insufficient permissions' }));
+          setError(errorData.error || 'Access denied. You do not have permission to upload images.');
+          console.error('[ImageUpload] 403 Forbidden:', errorData);
+          setUploading(false);
+          return;
+        }
+        
+        const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}: ${response.statusText}` }));
+        setError(errorData.error || `Upload failed with status ${response.status}`);
+        setUploading(false);
+        return;
+      }
 
       const data = await response.json();
 
       if (!data.success) {
         setError(data.error || 'Failed to upload image');
+        setUploading(false);
+        return;
+      }
+
+      if (!data.data || !data.data.url) {
+        setError('Upload succeeded but no image URL was returned');
         setUploading(false);
         return;
       }
@@ -75,7 +139,9 @@ export default function ImageUpload({
       onChange(imageUrl);
       setUploading(false);
     } catch (err) {
-      setError('An error occurred while uploading the image');
+      console.error('Image upload error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while uploading the image';
+      setError(errorMessage);
       setUploading(false);
     }
   };
@@ -189,10 +255,14 @@ export default function ImageUpload({
       {error && (
         <div style={{
           marginTop: '0.5rem',
+          padding: '0.75rem',
+          background: '#fed7d7',
           color: '#c53030',
           fontSize: '0.875rem',
+          borderRadius: '4px',
+          border: '1px solid #fca5a5',
         }}>
-          {error}
+          <strong>Upload Error:</strong> {error}
         </div>
       )}
 

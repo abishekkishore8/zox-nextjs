@@ -45,11 +45,29 @@ export default function AdminSidebar({ isOpen }: AdminSidebarProps) {
     </svg>
   );
 
+  const RssIcon = ({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 11a9 9 0 0 1 9 9"></path>
+      <path d="M4 4a16 16 0 0 1 16 16"></path>
+      <circle cx="5" cy="19" r="1"></circle>
+    </svg>
+  );
+
+  const BannersIcon = ({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="3" y1="9" x2="21" y2="9"></line>
+      <line x1="9" y1="21" x2="9" y2="9"></line>
+    </svg>
+  );
+
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: DashboardIcon },
     { href: '/admin/posts', label: 'Posts', icon: PostsIcon },
     { href: '/admin/events', label: 'Events', icon: EventsIcon },
     { href: '/admin/categories', label: 'Categories', icon: CategoriesIcon },
+    { href: '/admin/banners', label: 'Banners', icon: BannersIcon },
+    { href: '/admin/rss-feeds', label: 'RSS Feeds', icon: RssIcon },
   ];
 
   const headerHeight = 60;

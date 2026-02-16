@@ -7761,3 +7761,32 @@ body .mvp-fly-but-wrap.mvp-fly-open span:nth-child(4) {
 	transform: translateY(-5px) scale(1.1);
 	box-shadow: 0 10px 20px rgba(255, 0, 91, 0.3);
 }
+
+/* Fix for homepage thumbnails in featured section */
+/* Reset positioning for both images in the container */
+.mvp-feat1-sub-img img {
+	position: static !important;
+	left: auto !important;
+	right: auto !important;
+	min-width: 0 !important;
+}
+
+/* Desktop: Show Reg, Hide Mob */
+.mvp-feat1-sub-img .mvp-reg-img {
+	display: block !important;
+}
+
+.mvp-feat1-sub-img .mvp-mob-img {
+	display: none !important;
+}
+
+/* Mobile: Show Mob, Hide Reg */
+@media screen and (max-width: 767px) {
+	.mvp-feat1-sub-img .mvp-reg-img {
+		display: none !important;
+	}
+
+	.mvp-feat1-sub-img .mvp-mob-img {
+		display: block !important;
+	}
+}

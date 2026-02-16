@@ -27,15 +27,24 @@ export default function AdminLayout({
 
       const storedUser = getAdminUser();
       if (!storedUser) {
-        router.push('/admin/login');
+        setLoading(false);
+        router.replace('/admin/login');
         return;
       }
 
-      // Verify token with server
-      const verifiedUser = await verifyToken();
+      // Verify token with server (with timeout so we don't hang forever)
+      const timeoutMs = 10000;
+      const verifiedUser = await Promise.race([
+        verifyToken(),
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('Verification timeout')), timeoutMs)
+        ),
+      ]).catch(() => null);
+
       if (!verifiedUser) {
         clearAdminSession();
-        router.push('/admin/login');
+        setLoading(false);
+        router.replace('/admin/login');
         return;
       }
 

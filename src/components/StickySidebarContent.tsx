@@ -21,7 +21,8 @@ export function StickySidebarContent({ children }: { children: React.ReactNode }
 
     const containerRect = sidebarContainer.getBoundingClientRect();
     const contentHeight = content.offsetHeight;
-    const stickyTop = 24;
+    /* Match header height (~72px) + small gap so whole box shows below navbar */
+    const stickyTop = 88;
 
     // Calculate boundaries
     const containerTop = containerRect.top;
@@ -66,7 +67,7 @@ export function StickySidebarContent({ children }: { children: React.ReactNode }
         return {
           ...baseStyles,
           position: 'fixed',
-          top: '24px',
+          top: '88px',
           width: width ? `${width}px` : '100%',
         };
       case 'bottom':

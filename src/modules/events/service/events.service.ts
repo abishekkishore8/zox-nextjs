@@ -1,6 +1,6 @@
 import { EventsRepository } from '../repository/events.repository';
 import { EventEntity, CreateEventDto, UpdateEventDto } from '../domain/types';
-import { getCache, setCache, deleteCache } from '@/shared/cache/redis.client';
+import { getCache, setCache, deleteCache, deleteCacheByPrefix } from '@/shared/cache/redis.client';
 
 export class EventsService {
   constructor(private repository: EventsRepository) {}
@@ -12,15 +12,18 @@ export class EventsService {
     offset?: number;
     search?: string;
   }): Promise<EventEntity[]> {
+    // When fetching upcoming, mark expired events as past so DB status stays correct
+    if (filters?.status === 'upcoming') {
+      await this.repository.markPastEventsAsExpired();
+      await deleteCacheByPrefix('events:all:');
+    }
+
     const cacheKey = `events:all:${JSON.stringify(filters)}`;
-    
-    // Try cache first
     const cached = await getCache<EventEntity[]>(cacheKey);
     if (cached) return cached;
 
     const events = await this.repository.findAll(filters);
 
-    // Cache for 5 minutes
     await setCache(cacheKey, events, 300);
     return events;
   }
@@ -145,13 +148,13 @@ export class EventsService {
   }
 
   /**
-   * Invalidate all event caches
+   * Invalidate all event caches so public events section and admin see fresh data
    */
   private async invalidateEventCache(): Promise<void> {
-    // Clear common cache patterns
-    const patterns = ['events:all:', 'event:slug:', 'event:id:'];
-    // Note: Pattern-based deletion would require Redis SCAN or similar
-    // For now, cache will expire naturally
+    await Promise.all([
+      deleteCacheByPrefix('events:all:'),
+      deleteCacheByPrefix('events:by-region:'),
+    ]);
   }
 }
 

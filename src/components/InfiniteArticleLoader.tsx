@@ -6,17 +6,35 @@ import { FullArticle } from "@/components/FullArticle";
 
 interface InfiniteArticleLoaderProps {
     initialPosts: Post[];
-    availablePosts: Post[];
+    availableSlugs: string[]; // Changed from availablePosts: Post[]
 }
 
-export function InfiniteArticleLoader({ initialPosts, availablePosts }: InfiniteArticleLoaderProps) {
+export function InfiniteArticleLoader({ initialPosts, availableSlugs }: InfiniteArticleLoaderProps) {
     const [appendedPosts, setAppendedPosts] = useState<Post[]>([]);
-    const currentIndex = appendedPosts.length;
-    const hasMore = currentIndex < availablePosts.length;
+    const [loading, setLoading] = useState(false);
 
-    const loadMore = () => {
-        if (hasMore) {
-            setAppendedPosts((prev) => [...prev, availablePosts[currentIndex]]);
+    // We have loaded X posts so far. The next one to load is at index X.
+    const currentIndex = appendedPosts.length;
+    const hasMore = currentIndex < availableSlugs.length;
+
+    const loadMore = async () => {
+        if (!hasMore || loading) return;
+
+        setLoading(true);
+        const nextSlug = availableSlugs[currentIndex];
+
+        try {
+            const res = await fetch(`/api/posts/${nextSlug}`);
+            if (!res.ok) throw new Error('Failed to load post');
+
+            const data = await res.json();
+            if (data.success && data.data) {
+                setAppendedPosts((prev) => [...prev, data.data]);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -33,9 +51,10 @@ export function InfiniteArticleLoader({ initialPosts, availablePosts }: Infinite
                         type="button"
                         className="mvp-more-news-but mvp-inf-more-but"
                         onClick={loadMore}
-                        style={{ cursor: "pointer", float: "none" }}
+                        disabled={loading}
+                        style={{ cursor: "pointer", float: "none", opacity: loading ? 0.7 : 1 }}
                     >
-                        More News
+                        {loading ? 'Loading...' : 'More News'}
                     </button>
                 </div>
             )}

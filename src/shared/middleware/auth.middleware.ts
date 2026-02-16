@@ -11,32 +11,62 @@ const usersService = new UsersService(usersRepository);
 const authService = new AuthService(usersService);
 
 /**
- * Get user from request token
+ * Get token from request.
+ * Checks: Authorization Bearer, X-Admin-Token (fallback when proxies strip Authorization on GET), form body.
  */
-export async function getAuthUser(request: NextRequest): Promise<{
+function getTokenFromRequest(request: NextRequest, formToken?: string | null): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const t = authHeader.substring(7).trim();
+    if (t) return t;
+  }
+  const xToken = request.headers.get('x-admin-token');
+  if (xToken && typeof xToken === 'string' && xToken.trim()) return xToken.trim();
+  if (formToken && typeof formToken === 'string' && formToken.trim()) return formToken.trim();
+  return null;
+}
+
+/**
+ * Get user from a token string (e.g. from form body when Authorization header is stripped on multipart)
+ */
+export async function getAuthUserFromToken(token: string): Promise<{
   user: User;
   payload: JWTPayload;
 } | null> {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
+    if (!token || !token.trim()) return null;
     const payload = authService.verifyToken(token);
-
-    if (!payload) {
-      return null;
-    }
-
+    if (!payload) return null;
     const user = await usersService.getUserById(payload.userId);
-    if (!user || !user.isActive) {
-      return null;
-    }
-
+    if (!user || !user.isActive) return null;
     return { user, payload };
   } catch {
+    return null;
+  }
+}
+
+/**
+ * Get user from request token (header or, for multipart, from form field _token)
+ */
+export async function getAuthUser(
+  request: NextRequest,
+  formToken?: string | null
+): Promise<{
+  user: User;
+  payload: JWTPayload;
+} | null> {
+  try {
+    const token = getTokenFromRequest(request, formToken);
+    if (!token) {
+      console.error('[Auth] No token (header or form)', {
+        hasAuthHeader: !!request.headers.get('authorization'),
+        hasFormToken: !!formToken,
+      });
+      return null;
+    }
+    return getAuthUserFromToken(token);
+  } catch (error) {
+    console.error('[Auth] Error in getAuthUser:', error);
     return null;
   }
 }
@@ -64,10 +94,14 @@ export async function requireAuth(
   }
 
   if (requiredRole && !authService.hasRole(auth.user, requiredRole)) {
+    console.error(`[Auth] Role check failed - User role: "${auth.user.role}", Required: "${requiredRole}"`, {
+      userId: auth.user.id,
+      userEmail: auth.user.email,
+    });
     return NextResponse.json(
       {
         success: false,
-        error: 'Forbidden - Insufficient permissions',
+        error: `Forbidden - Insufficient permissions. Required role: ${requiredRole}, Your role: ${auth.user.role}`,
       },
       { status: 403 }
     );

@@ -6,7 +6,7 @@ import { FlyMenuProvider } from "@/components/FlyMenuContext";
 import { FlyMenuFade } from "@/components/FlyMenuFade";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SearchOverlay } from "@/components/SearchOverlay";
+import { BannerCarouselClient } from "@/components/BannerCarouselClient";
 
 export default function ConditionalLayout({
   children,
@@ -26,11 +26,11 @@ export default function ConditionalLayout({
     <FlyMenuProvider>
       <FlyMenu />
       <div id="mvp-site" className="left relative">
-        <SearchOverlay />
         <div id="mvp-site-wall" className="left relative">
           <div id="mvp-site-main" className="left relative">
             <Header />
-            <div id="mvp-main-body-wrap" className="left relative" style={{ marginTop: "20px" }}>
+            {/* <BannerCarouselClient /> */}
+            <div id="mvp-main-body-wrap" className="left relative">
               {children}
             </div>
             <Footer />

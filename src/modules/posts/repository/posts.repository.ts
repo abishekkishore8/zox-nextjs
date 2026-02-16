@@ -1,6 +1,10 @@
 import { query, queryOne, getDbConnection } from '@/shared/database/connection';
 import { PostEntity } from '../domain/types';
 
+/** Only show published posts that have body (content) and at least one image (featured or <img> in content). */
+const HAS_BODY_AND_IMAGE =
+  " AND (TRIM(COALESCE(content, '')) != '' AND (TRIM(COALESCE(featured_image_url, '')) != '' OR content LIKE '%<img%'))";
+
 export class PostsRepository {
   /**
    * Find all posts with optional filters
@@ -13,9 +17,13 @@ export class PostsRepository {
     limit?: number;
     offset?: number;
     search?: string;
+    source?: 'manual' | 'rss';
+    /** When false, do not restrict published posts to those with S3 thumbnail (e.g. for admin list) */
+    restrictThumbnail?: boolean;
   }): Promise<PostEntity[]> {
     let sql = 'SELECT * FROM posts WHERE 1=1';
     const params: (string | number | boolean | null)[] = [];
+    const restrictThumbnail = filters?.restrictThumbnail !== false;
 
     if (filters?.categoryId) {
       sql += ' AND category_id = ?';
@@ -25,6 +33,13 @@ export class PostsRepository {
     if (filters?.status) {
       sql += ' AND status = ?';
       params.push(filters.status);
+      if (filters.status === 'published' && restrictThumbnail) sql += HAS_BODY_AND_IMAGE;
+    }
+
+    if (filters?.source === 'rss') {
+      sql += ' AND id IN (SELECT post_id FROM rss_feed_items WHERE post_id IS NOT NULL)';
+    } else if (filters?.source === 'manual') {
+      sql += ' AND id NOT IN (SELECT post_id FROM rss_feed_items WHERE post_id IS NOT NULL)';
     }
 
     if (filters?.featured !== undefined) {
@@ -38,7 +53,7 @@ export class PostsRepository {
       params.push(searchTerm, searchTerm, searchTerm);
     }
 
-    sql += ' ORDER BY published_at DESC, created_at DESC';
+    sql += ' ORDER BY id DESC';
 
     if (filters?.limit) {
       sql += ' LIMIT ?';
@@ -61,9 +76,12 @@ export class PostsRepository {
     status?: string;
     featured?: boolean;
     search?: string;
+    source?: 'manual' | 'rss';
+    restrictThumbnail?: boolean;
   }): Promise<number> {
     let sql = 'SELECT COUNT(*) as count FROM posts WHERE 1=1';
     const params: (string | number | boolean | null)[] = [];
+    const restrictThumbnail = filters?.restrictThumbnail !== false;
 
     if (filters?.categoryId) {
       sql += ' AND category_id = ?';
@@ -73,6 +91,13 @@ export class PostsRepository {
     if (filters?.status) {
       sql += ' AND status = ?';
       params.push(filters.status);
+      if (filters.status === 'published' && restrictThumbnail) sql += HAS_BODY_AND_IMAGE;
+    }
+
+    if (filters?.source === 'rss') {
+      sql += ' AND id IN (SELECT post_id FROM rss_feed_items WHERE post_id IS NOT NULL)';
+    } else if (filters?.source === 'manual') {
+      sql += ' AND id NOT IN (SELECT post_id FROM rss_feed_items WHERE post_id IS NOT NULL)';
     }
 
     if (filters?.featured !== undefined) {
@@ -107,14 +132,30 @@ export class PostsRepository {
   }
 
   /**
+   * Get original article URL for a post (from rss_feed_items when post came from RSS).
+   */
+  async getSourceLinkByPostId(postId: number): Promise<string | null> {
+    const row = await queryOne<{ link: string }>(
+      'SELECT link FROM rss_feed_items WHERE post_id = ? AND link IS NOT NULL AND link != "" LIMIT 1',
+      [postId]
+    );
+    return row?.link?.trim() ?? null;
+  }
+
+  /**
    * Find posts by category slug (with join)
    */
   async findByCategorySlug(categorySlug: string, limit?: number): Promise<PostEntity[]> {
+    // Replace ALL occurrences (not just first) to properly prefix columns with table alias
+    const filterClause = HAS_BODY_AND_IMAGE
+      .replace(/content/g, 'p.content')
+      .replace(/featured_image_url/g, 'p.featured_image_url');
+    
     let sql = `
       SELECT p.* FROM posts p
       INNER JOIN categories c ON p.category_id = c.id
-      WHERE c.slug = ? AND p.status = 'published'
-      ORDER BY p.published_at DESC, p.created_at DESC
+      WHERE c.slug = ? AND p.status = 'published'${filterClause}
+      ORDER BY p.id DESC
     `;
     const params: (string | number)[] = [categorySlug];
 
@@ -127,16 +168,106 @@ export class PostsRepository {
   }
 
   /**
-   * Find featured posts
+   * Find featured posts (legacy: by featured flag)
    */
   async findFeatured(limit: number = 5): Promise<PostEntity[]> {
     return query<PostEntity>(
       `SELECT * FROM posts 
-       WHERE featured = 1 AND status = 'published'
-       ORDER BY published_at DESC, created_at DESC
+       WHERE featured = 1 AND status = 'published'${HAS_BODY_AND_IMAGE}
+       ORDER BY id DESC
        LIMIT ?`,
       [limit]
     );
+  }
+
+  /**
+   * Find latest posts from all categories (for "Latest News" / featured section)
+   */
+  async findLatest(limit: number): Promise<PostEntity[]> {
+    return query<PostEntity>(
+      `SELECT * FROM posts 
+       WHERE status = 'published'${HAS_BODY_AND_IMAGE}
+       ORDER BY id DESC
+       LIMIT ?`,
+      [limit]
+    );
+  }
+
+  /**
+   * Find latest published posts without requiring S3 thumbnail (for Latest News listing).
+   * entityToPost will still derive image from content when featured_image_url is empty,
+   * so onlyPostsWithImage can include posts that have image only in content.
+   */
+  async findLatestForListing(limit: number): Promise<PostEntity[]> {
+    return query<PostEntity>(
+      `SELECT * FROM posts 
+       WHERE status = 'published'${HAS_BODY_AND_IMAGE}
+       ORDER BY id DESC
+       LIMIT ?`,
+      [limit]
+    );
+  }
+
+  /**
+   * Find latest posts excluding given IDs (for "More News" after featured)
+   */
+  async findLatestExcluding(limit: number, excludeIds: number[]): Promise<PostEntity[]> {
+    if (excludeIds.length === 0) {
+      return this.findLatest(limit);
+    }
+    const placeholders = excludeIds.map(() => '?').join(',');
+    return query<PostEntity>(
+      `SELECT * FROM posts 
+       WHERE status = 'published'${HAS_BODY_AND_IMAGE} AND id NOT IN (${placeholders})
+       ORDER BY id DESC
+       LIMIT ?`,
+      [...excludeIds, limit]
+    );
+  }
+
+  /**
+   * Find latest post slugs excluding given IDs (optimized for performance).
+   * Returns only slugs to minimize payload size.
+   */
+  async findLatestSlugsExcluding(limit: number, excludeIds: number[]): Promise<{ slug: string }[]> {
+    if (excludeIds.length === 0) {
+      return query<{ slug: string }>(
+        `SELECT slug FROM posts 
+         WHERE status = 'published'${HAS_BODY_AND_IMAGE}
+         ORDER BY id DESC
+         LIMIT ?`,
+        [limit]
+      );
+    }
+    const placeholders = excludeIds.map(() => '?').join(',');
+    return query<{ slug: string }>(
+      `SELECT slug FROM posts 
+       WHERE status = 'published'${HAS_BODY_AND_IMAGE} AND id NOT IN (${placeholders})
+       ORDER BY id DESC
+       LIMIT ?`,
+      [...excludeIds, limit]
+    );
+  }
+
+  /**
+   * Find previous/next post neighbors by id (newest-first ordering).
+   */
+  async findPrevNextBySlug(currentSlug: string): Promise<{ prev: PostEntity | null; next: PostEntity | null }> {
+    const current = await this.findBySlug(currentSlug);
+    if (!current || current.status !== 'published') {
+      return { prev: null, next: null };
+    }
+
+    const prev = await queryOne<PostEntity>(
+      `SELECT * FROM posts WHERE status = 'published'${HAS_BODY_AND_IMAGE} AND id < ? ORDER BY id DESC LIMIT 1`,
+      [current.id]
+    );
+    const next = await queryOne<PostEntity>(
+      `SELECT * FROM posts WHERE status = 'published'${HAS_BODY_AND_IMAGE} AND id > ? ORDER BY id ASC LIMIT 1`,
+      [current.id]
+    );
+
+    return { prev: prev ?? null, next: next ?? null };
   }
 
   /**
@@ -145,7 +276,7 @@ export class PostsRepository {
   async findTrending(limit: number = 5, excludeIds: number[] = []): Promise<PostEntity[]> {
     let sql = `
       SELECT * FROM posts 
-      WHERE status = 'published'
+      WHERE status = 'published'${HAS_BODY_AND_IMAGE}
     `;
     const params: number[] = [];
 
@@ -154,7 +285,7 @@ export class PostsRepository {
       params.push(...excludeIds);
     }
 
-    sql += ` ORDER BY trending_score DESC, published_at DESC LIMIT ?`;
+    sql += ` ORDER BY trending_score DESC, id DESC LIMIT ?`;
     params.push(limit);
 
     return query<PostEntity>(sql, params);
@@ -166,9 +297,9 @@ export class PostsRepository {
   async search(queryText: string, limit: number = 20): Promise<PostEntity[]> {
     return query<PostEntity>(
       `SELECT * FROM posts 
-       WHERE status = 'published' 
+       WHERE status = 'published'${HAS_BODY_AND_IMAGE}
        AND (title LIKE ? OR excerpt LIKE ? OR content LIKE ?)
-       ORDER BY published_at DESC
+       ORDER BY id DESC
        LIMIT ?`,
       [`%${queryText}%`, `%${queryText}%`, `%${queryText}%`, limit]
     );
@@ -190,6 +321,7 @@ export class PostsRepository {
     status?: string;
     featured?: boolean;
   }): Promise<PostEntity> {
+    const status = data.status || 'draft';
     const sql = `
       INSERT INTO posts (
         title, slug, excerpt, content, category_id, author_id,
@@ -206,9 +338,9 @@ export class PostsRepository {
       data.featuredImageUrl || null,
       data.featuredImageSmallUrl || null,
       data.format || 'standard',
-      data.status || 'draft',
+      status,
       data.featured ? 1 : 0,
-      data.status === 'published' ? new Date() : null,
+      status === 'published' ? new Date() : null,
     ];
 
     const conn = await getDbConnection();

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/shared/middleware/auth.middleware';
+import { requireAuth } from '@/shared/middleware/auth.middleware';
 import { PostsRepository } from '@/modules/posts/repository/posts.repository';
 import { EventsRepository } from '@/modules/events/repository/events.repository';
 import { CategoriesRepository } from '@/modules/categories/repository/categories.repository';
+
+export const maxDuration = 30;
 
 // Initialize repositories
 const postsRepository = new PostsRepository();
@@ -14,7 +16,7 @@ const categoriesRepository = new CategoriesRepository();
  * Get dashboard statistics (batch endpoint)
  */
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuth(request, 'editor');
   if (auth instanceof NextResponse) return auth;
 
   try {

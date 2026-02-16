@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import Link from 'next/link';
 import { getAuthHeaders } from '@/lib/admin-auth';
 import { useAdminData } from '@/hooks/useAdminData';
@@ -17,6 +17,8 @@ interface Post {
   featured?: boolean;
   date: string;
   category: string;
+  source?: 'manual' | 'rss';
+  rssFeedName?: string;
 }
 
 export default function PostsPage() {
@@ -26,6 +28,8 @@ export default function PostsPage() {
     error,
     refetch,
     pagination,
+    search,
+    filters,
     setPage,
     setLimit,
     setSearch,
@@ -61,13 +65,20 @@ export default function PostsPage() {
   }, [refetch]);
 
   const handleStatusFilter = useCallback((status: string | null) => {
-    setFilters(status ? { status } : {});
+    setFilters((prev) => {
+      if (status) return { ...prev, status };
+      const { status: _, ...rest } = prev;
+      return rest;
+    });
   }, [setFilters]);
 
-  const statusFilter = useMemo(() => {
-    // Extract current status filter from filters if needed
-    return '';
-  }, []);
+  const handleSourceFilter = useCallback((source: string | null) => {
+    setFilters((prev) => {
+      if (source === 'manual' || source === 'rss') return { ...prev, source };
+      const { source: _, ...rest } = prev;
+      return rest;
+    });
+  }, [setFilters]);
 
   return (
     <AdminErrorBoundary>
@@ -140,11 +151,12 @@ export default function PostsPage() {
           alignItems: 'center',
         }}>
           <SearchBar
-            value=""
+            value={search}
             onChange={setSearch}
             placeholder="Search posts by title, excerpt, or slug..."
           />
           <select
+            value={String(filters.status ?? '')}
             onChange={(e) => handleStatusFilter(e.target.value || null)}
             style={{
               padding: '0.75rem 1rem',
@@ -170,6 +182,32 @@ export default function PostsPage() {
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </select>
+          <select
+            value={String(filters.source ?? '')}
+            onChange={(e) => handleSourceFilter(e.target.value || null)}
+            style={{
+              padding: '0.75rem 1rem',
+              border: '2px solid #e2e8f0',
+              borderRadius: '8px',
+              fontSize: '0.9375rem',
+              background: 'white',
+              cursor: 'pointer',
+              color: '#475569',
+              minWidth: '150px',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#e2e8f0';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <option value="">All Sources</option>
+            <option value="manual">Manual Posts</option>
+            <option value="rss">RSS Posts</option>
+          </select>
         </div>
 
         {error && (
@@ -183,14 +221,34 @@ export default function PostsPage() {
             border: '1px solid #fca5a5',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '0.5rem',
+            flexWrap: 'wrap',
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            {error}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#b91c1c',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.8125rem',
+                fontWeight: '600',
+              }}
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -311,6 +369,18 @@ export default function PostsPage() {
                         letterSpacing: '0.05em',
                         borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
                       }}>
+                        Source
+                      </th>
+                      <th style={{
+                        padding: '1.25rem 1.5rem',
+                        textAlign: 'left',
+                        fontWeight: '600',
+                        fontSize: '0.75rem',
+                        color: '#475569',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                      }}>
                         Status
                       </th>
                       <th style={{
@@ -382,6 +452,53 @@ export default function PostsPage() {
                           {post.category}
                         </td>
                         <td style={{ padding: '1.25rem 1.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.375rem 0.875rem',
+                              borderRadius: '6px',
+                              fontSize: '0.8125rem',
+                              fontWeight: '600',
+                              background: post.source === 'rss'
+                                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
+                                : 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                              color: post.source === 'rss' ? '#1e40af' : '#374151',
+                              border: `1px solid ${post.source === 'rss' ? '#bfdbfe' : '#e5e7eb'}`,
+                              width: 'fit-content',
+                            }}>
+                              {post.source === 'rss' ? (
+                                <>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '0.25rem' }}>
+                                    <path d="M6.503 20.752c0 1.794-1.456 3.248-3.251 3.248-1.796 0-3.252-1.454-3.252-3.248 0-1.794 1.456-3.248 3.252-3.248 1.795.001 3.251 1.454 3.251 3.248zm-6.503-12.572v4.811c6.05.062 10.96 4.966 11.022 11.009h4.817c-.062-8.71-7.118-15.758-15.839-15.82zm0-3.368c10.58.046 19.152 8.594 19.183 19.188h4.817c-.03-13.231-10.755-23.954-24-24v4.812z"/>
+                                  </svg>
+                                  RSS
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.25rem' }}>
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                  </svg>
+                                  Manual
+                                </>
+                              )}
+                            </span>
+                            {post.source === 'rss' && post.rssFeedName && (
+                              <span style={{
+                                fontSize: '0.75rem',
+                                color: '#64748b',
+                                marginTop: '0.125rem',
+                              }}>
+                                {post.rssFeedName}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ padding: '1.25rem 1.5rem' }}>
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -389,11 +506,12 @@ export default function PostsPage() {
                             borderRadius: '6px',
                             fontSize: '0.8125rem',
                             fontWeight: '600',
-                            background: post.status === 'published' 
-                              ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' 
-                              : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
-                            color: post.status === 'published' ? '#065f46' : '#991b1b',
-                            border: `1px solid ${post.status === 'published' ? '#a7f3d0' : '#fca5a5'}`,
+                            ...(post.status === 'published'
+                              ? { background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)', color: '#065f46', border: '1px solid #a7f3d0' }
+                              : post.status === 'archived'
+                                ? { background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', color: '#475569', border: '1px solid #cbd5e1' }
+                                : { background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)', color: '#991b1b', border: '1px solid #fca5a5' }
+                            ),
                           }}>
                             {post.status || 'draft'}
                           </span>

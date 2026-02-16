@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthHeaders } from '@/lib/admin-auth';
-import ImageUpload from '@/components/admin/ImageUpload';
+import { getAuthHeaders, getAdminToken } from '@/lib/admin-auth';
+import RichTextEditor from '@/components/admin/RichTextEditor';
+import { EVENTS_REGION_ORDER } from '@/lib/events-constants';
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -14,6 +15,8 @@ export default function EditEventPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -76,11 +79,32 @@ export default function EditEventPage() {
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/admin/events/${eventId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(formData),
-      });
+      const token = getAdminToken();
+      let response: Response;
+      if (imageFile) {
+        const form = new FormData();
+        form.append('title', formData.title);
+        form.append('slug', formData.slug);
+        form.append('excerpt', formData.excerpt);
+        form.append('description', formData.description);
+        form.append('location', formData.location);
+        form.append('eventDate', formData.eventDate);
+        form.append('eventTime', formData.eventTime);
+        form.append('externalUrl', formData.externalUrl);
+        form.append('status', formData.status);
+        form.append('imageFile', imageFile);
+        response = await fetch(`/api/admin/events/${eventId}`, {
+          method: 'PUT',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        });
+      } else {
+        response = await fetch(`/api/admin/events/${eventId}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(formData),
+        });
+      }
 
       const data = await response.json();
 
@@ -204,10 +228,9 @@ export default function EditEventPage() {
             fontWeight: '500',
             color: '#4a5568',
           }}>
-            Location *
+            Location * (must match Events section regions)
           </label>
-          <input
-            type="text"
+          <select
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             required
@@ -219,8 +242,15 @@ export default function EditEventPage() {
               fontSize: '1rem',
               boxSizing: 'border-box',
             }}
-            placeholder="e.g., San Francisco, CA"
-          />
+          >
+            <option value="">Select region</option>
+            {EVENTS_REGION_ORDER.map((region) => (
+              <option key={region} value={region}>{region}</option>
+            ))}
+            {formData.location && !(EVENTS_REGION_ORDER as readonly string[]).includes(formData.location) && (
+              <option value={formData.location}>{formData.location} (current – change to a region above to show on site)</option>
+            )}
+          </select>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -307,27 +337,88 @@ export default function EditEventPage() {
           }}>
             Description
           </label>
-          <textarea
+          <RichTextEditor
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={5}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-            }}
+            onChange={(description) => setFormData({ ...formData, description })}
+            placeholder="Event description (formatting supported)..."
+            minHeight={200}
           />
         </div>
 
-        <ImageUpload
-          value={formData.imageUrl}
-          onChange={(url) => setFormData({ ...formData, imageUrl: url })}
-          label="Event Image"
-        />
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>
+            Event Image
+          </label>
+          {(imagePreview || formData.imageUrl) && (
+            <div style={{ marginBottom: '1rem', position: 'relative', display: 'inline-block' }}>
+              <img
+                src={imagePreview || formData.imageUrl}
+                alt="Preview"
+                style={{ maxWidth: 300, maxHeight: 200, borderRadius: 4, border: '1px solid #e2e8f0' }}
+                onError={() => setImagePreview(null)}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setImageFile(null);
+                  setImagePreview(null);
+                  setFormData((p) => ({ ...p, imageUrl: '' }));
+                }}
+                style={{
+                  position: 'absolute', top: '0.5rem', right: '0.5rem',
+                  background: '#e53e3e', color: 'white', border: 'none', borderRadius: '50%',
+                  width: 24, height: 24, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <label style={{
+              padding: '0.75rem 1.5rem', background: '#48bb78', color: 'white', borderRadius: 4,
+              cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, display: 'inline-block', textAlign: 'center',
+            }}>
+              {imageFile ? imageFile.name : 'Choose image (uploaded with event)'}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError('Image must be under 5MB');
+                      return;
+                    }
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                    setFormData((p) => ({ ...p, imageUrl: '' }));
+                    setError('');
+                  }
+                }}
+              />
+            </label>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <input
+                type="url"
+                value={formData.imageUrl}
+                onChange={(e) => {
+                  setFormData((p) => ({ ...p, imageUrl: e.target.value }));
+                  setImageFile(null);
+                  setImagePreview(null);
+                }}
+                placeholder="Or enter image URL"
+                style={{
+                  width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: 4, fontSize: '1rem', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: '#64748b' }}>
+            Choose a file to upload with the event (same as RSS: image is uploaded to S3 when you save). Or paste an image URL.
+          </p>
+        </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{

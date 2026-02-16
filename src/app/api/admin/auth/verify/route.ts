@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Only allow admin and editor roles
-    if (auth.user.role !== 'admin' && auth.user.role !== 'editor') {
+    // Allow admin, editor, and author (author can create posts)
+    const allowed = ['admin', 'editor', 'author', 'administrator'];
+    const role = (auth.user.role || '').toLowerCase().trim();
+    const normalized = role === 'administrator' ? 'admin' : role;
+    if (!allowed.includes(normalized)) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Access denied',
-        },
+        { success: false, error: 'Access denied' },
         { status: 403 }
       );
     }

@@ -8,24 +8,19 @@ import { FlyMenuButton } from "@/components/FlyMenuButton";
 
 export function Header() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
-  // Handle search icon click - toggle expansion on mobile
+  // Handle search icon click - on mobile expand input first; do not open overlay
   const handleSearchClick = (e: React.MouseEvent) => {
-    // Only handle expansion on mobile, desktop uses overlay
     if (window.innerWidth <= 767) {
-      // If search is already expanded, let form submit handle it
-      if (isSearchExpanded) {
-        // Form will handle submission
-        return;
-      }
-      // Otherwise, expand the search
+      if (isSearchExpanded) return;
       e.preventDefault();
       e.stopPropagation();
       setIsSearchExpanded(true);
     }
-    // On desktop, let the default behavior (overlay) happen
   };
 
   // Handle search form submission
@@ -74,10 +69,30 @@ export function Header() {
     }
   }, [isSearchExpanded]);
 
+  // Handle scroll detection for enhanced shadow effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      setIsScrolled(scrollY > 10);
+    };
+
+    // Check initial scroll position
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
-    <header id="mvp-main-head-wrap" className="left relative startupnews-nav">
+    <header 
+      id="mvp-main-head-wrap" 
+      ref={headerRef}
+      className={`left relative startupnews-nav ${isScrolled ? "scrolled" : ""}`}
+    >
       <nav id="mvp-main-nav-wrap" className="left relative">
-        <div id="mvp-main-nav-bot" className="left relative">
+        <div id="mvp-main-nav-bot" className="left">
           <div id="mvp-main-nav-bot-cont" className="left">
             <div className="mvp-main-box">
               <div id="mvp-nav-bot-wrap" className="left relative startupnews-nav-inner">
@@ -141,7 +156,7 @@ export function Header() {
                     />
                     <button
                       type="submit"
-                      className="startupnews-search-btn mvp-search-click"
+                      className="startupnews-search-btn"
                       aria-label="Search"
                       onClick={handleSearchClick}
                     >

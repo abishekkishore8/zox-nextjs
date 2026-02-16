@@ -1,0 +1,205 @@
+import type { RssFeedEntity } from '../domain/types';
+import type { ParsedRssItem } from '../domain/types';
+import { PostsRepository } from '@/modules/posts/repository/posts.repository';
+import { slugify } from '@/shared/utils/string.utils';
+import { invalidatePostsListCache } from '@/shared/cache/redis.client';
+import {
+  downloadAndUploadToS3,
+  downloadImage,
+  normalizeSourceImageUrl,
+  s3KeyForRssImage,
+  uploadImageToS3,
+} from '../utils/image-to-s3';
+import {
+  extractArticleHtml,
+  extractImageUrlsFromHtml,
+  extractPrimaryImageFromHtml,
+} from '../utils/content-extract';
+
+const ARTICLE_FETCH_TIMEOUT_MS = 15000;
+const MAX_SLUG_LENGTH = 500;
+
+export class RssPostCreatorService {
+  private postsRepo = new PostsRepository();
+
+  private isOurS3Url(url: string): boolean {
+    try {
+      const u = new URL(url);
+      const host = u.hostname;
+      return host === 'startupnews-media-2026.s3.us-east-1.amazonaws.com'
+        || host === 's3.amazonaws.com'
+        || (host.endsWith('.s3.us-east-1.amazonaws.com') && host.startsWith('startupnews-media-2026.'));
+    } catch {
+      return false;
+    }
+  }
+
+  async createPostFromRssItem(
+    item: ParsedRssItem,
+    feed: RssFeedEntity,
+    contentTemplate?: string,
+    titleTemplate?: string
+  ): Promise<{ postId: number; slug: string }> {
+    const link = item.link || '';
+    const baseUrl = link ? new URL(link).origin : '';
+
+    // 1) Get article HTML: prefer fetching full page for full body; fallback to RSS content
+    let articleHtml = item.content || '';
+    // Fetch full page when RSS gives little content (e.g. short snippet) so single post page shows full article
+    const rssContentTooShort = !articleHtml || articleHtml.length < 800;
+    let fetchedPageHtml = '';
+    if (link && rssContentTooShort) {
+      try {
+        const res = await fetch(link, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html',
+          },
+          signal: AbortSignal.timeout(ARTICLE_FETCH_TIMEOUT_MS),
+        });
+        if (res.ok) {
+          const html = await res.text();
+          fetchedPageHtml = html;
+          const extracted = extractArticleHtml(html);
+          if (extracted && extracted.length > (articleHtml?.length || 0)) {
+            articleHtml = extracted;
+          }
+        }
+      } catch {
+        // keep articleHtml from RSS
+      }
+    }
+    if (!articleHtml || !articleHtml.trim()) articleHtml = item.description || item.content || '<p>No content.</p>';
+
+    // 2) Extract image URLs and upload to S3, build replacements
+    const imageUrls = extractImageUrlsFromHtml(articleHtml, baseUrl);
+    const urlToS3 = new Map<string, string>();
+    const uniqueBase = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    for (let i = 0; i < imageUrls.length; i++) {
+      const s3Url = await downloadAndUploadToS3(imageUrls[i], `${uniqueBase}-${i}`);
+      if (s3Url) urlToS3.set(imageUrls[i], s3Url);
+    }
+    let matchedContent = articleHtml;
+    for (const [oldUrl, newUrl] of urlToS3) {
+      matchedContent = matchedContent.split(oldUrl).join(newUrl);
+    }
+
+    // 3) Optional: featured image from first image or RSS image
+    let featuredImageUrl: string | null = null;
+    if (imageUrls.length > 0 && urlToS3.has(imageUrls[0])) {
+      featuredImageUrl = urlToS3.get(imageUrls[0])!;
+    } else if (item.imageUrl) {
+      const normalizedItemImage = normalizeSourceImageUrl(item.imageUrl);
+      const buf = await downloadImage(normalizedItemImage);
+      if (buf) {
+        const key = s3KeyForRssImage(`${uniqueBase}-feat`, normalizedItemImage);
+        const ext = (normalizedItemImage.split('.').pop()?.split(/[?#]/)[0] || 'jpg').toLowerCase();
+        const contentType = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' }[ext] || 'image/jpeg';
+        try {
+          featuredImageUrl = await uploadImageToS3(key, buf, contentType);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // 3b) Fallback to OG/Twitter image from fetched page when RSS item/image tags had nothing usable.
+    // NEW: If we haven't fetched the page yet (because RSS content was long enough), fetch it now to check for metadata images.
+    if (!featuredImageUrl && !fetchedPageHtml && link) {
+      try {
+        const res = await fetch(link, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html',
+          },
+          signal: AbortSignal.timeout(ARTICLE_FETCH_TIMEOUT_MS),
+        });
+        if (res.ok) {
+          fetchedPageHtml = await res.text();
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!featuredImageUrl && fetchedPageHtml && baseUrl) {
+      const primaryMetaImage = extractPrimaryImageFromHtml(fetchedPageHtml, baseUrl);
+      if (primaryMetaImage) {
+        const s3Meta = await downloadAndUploadToS3(primaryMetaImage, `${uniqueBase}-meta`);
+        if (s3Meta) featuredImageUrl = s3Meta;
+      }
+    }
+
+    // 3c) If first content image already points to S3, use it directly as featured.
+    if (!featuredImageUrl && imageUrls.length > 0) {
+      const first = normalizeSourceImageUrl(imageUrls[0]);
+      if (this.isOurS3Url(first)) featuredImageUrl = first;
+    }
+
+    // Never use Unsplash or other default URLs as thumbnail – treat as no image (post will be draft).
+    if (featuredImageUrl && featuredImageUrl.startsWith('https://images.unsplash.com/')) {
+      featuredImageUrl = null;
+    }
+
+    // 4) Build title and content from template placeholders
+    const title = this.applyTemplate(titleTemplate || '[original_title]', {
+      original_title: item.title,
+    });
+    const productImgsHtml = imageUrls.length > 0
+      ? imageUrls
+        .slice(0, 10)
+        .map((url) => urlToS3.get(url))
+        .filter(Boolean)
+        .map((url) => `<img src="${url}" alt="" />`)
+        .join('\n')
+      : '';
+    const content = this.applyTemplate(contentTemplate || '[ad_1]\n<br>[matched_content]\n<br>[ad_2]\n<br><a href="[source_link]">Source link</a>', {
+      matched_content: matchedContent,
+      product_imgs_html: productImgsHtml,
+      source_link: link,
+      ad_1: '',
+      ad_2: '',
+    });
+
+    const excerpt = (item.description || matchedContent.replace(/<[^>]*>/g, ' ').slice(0, 500)).trim().slice(0, 2000);
+
+    const baseSlug = (slugify(item.title) || 'post').slice(0, MAX_SLUG_LENGTH - 15);
+    let slug = (baseSlug || `post-${Date.now().toString(36)}`).slice(0, MAX_SLUG_LENGTH);
+    let existing = await this.postsRepo.findBySlug(slug);
+    let suffix = 0;
+    while (existing && suffix < 1000) {
+      slug = `${baseSlug || 'post'}-${Date.now().toString(36)}-${suffix}`.slice(0, MAX_SLUG_LENGTH);
+      existing = await this.postsRepo.findBySlug(slug);
+      suffix++;
+    }
+
+    // Publish only when we have a valid thumbnail and non-empty body; otherwise save as draft. We always create the post (never skip).
+    const hasValidThumbnail = !!featuredImageUrl && featuredImageUrl.trim().length > 0;
+    const hasBody = typeof content === 'string' && content.trim().length > 0;
+    const published = feed.auto_publish && hasValidThumbnail && hasBody ? 1 : 0;
+    const post = await this.postsRepo.create({
+      title: title.slice(0, 500),
+      slug,
+      excerpt,
+      content,
+      categoryId: feed.category_id,
+      authorId: feed.author_id,
+      featuredImageUrl: featuredImageUrl || undefined,
+      featuredImageSmallUrl: featuredImageUrl || undefined,
+      format: 'standard',
+      status: published ? 'published' : 'draft',
+      featured: false,
+    });
+
+    await invalidatePostsListCache();
+    return { postId: post.id, slug: post.slug };
+  }
+
+  private applyTemplate(template: string, vars: Record<string, string>): string {
+    let out = template;
+    for (const [key, value] of Object.entries(vars)) {
+      out = out.replace(new RegExp(`\\[${key}\\]`, 'gi'), value || '');
+    }
+    return out;
+  }
+}

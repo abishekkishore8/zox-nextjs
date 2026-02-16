@@ -26,6 +26,8 @@ export default function EventsPage() {
     error,
     refetch,
     pagination,
+    search,
+    filters,
     setPage,
     setLimit,
     setSearch,
@@ -60,11 +62,19 @@ export default function EventsPage() {
   }, [refetch]);
 
   const handleStatusFilter = useCallback((status: string | null) => {
-    setFilters(status ? { status } : {});
+    setFilters((prev) => {
+      if (status) return { ...prev, status };
+      const { status: _, ...rest } = prev;
+      return rest;
+    });
   }, [setFilters]);
 
   const handleLocationFilter = useCallback((location: string | null) => {
-    setFilters(location ? { location } : {});
+    setFilters((prev) => {
+      if (location) return { ...prev, location };
+      const { location: _, ...rest } = prev;
+      return rest;
+    });
   }, [setFilters]);
 
   return (
@@ -138,11 +148,12 @@ export default function EventsPage() {
           alignItems: 'center',
         }}>
           <SearchBar
-            value=""
+            value={search}
             onChange={setSearch}
             placeholder="Search events by title, location, or slug..."
           />
           <select
+            value={String(filters.status ?? '')}
             onChange={(e) => handleStatusFilter(e.target.value || null)}
             style={{
               padding: '0.75rem 1rem',
@@ -172,6 +183,7 @@ export default function EventsPage() {
           <input
             type="text"
             placeholder="Filter by location..."
+            value={String(filters.location ?? '')}
             onChange={(e) => handleLocationFilter(e.target.value || null)}
             style={{
               padding: '0.75rem 1rem',
@@ -204,14 +216,19 @@ export default function EventsPage() {
             border: '1px solid #fca5a5',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '0.5rem',
+            flexWrap: 'wrap',
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            {error}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{error}</span>
+            </div>
+            <button type="button" onClick={() => refetch()} style={{ padding: '0.5rem 1rem', background: '#b91c1c', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: '600' }}>Retry</button>
           </div>
         )}
 

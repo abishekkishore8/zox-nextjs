@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAuthHeaders } from '@/lib/admin-auth';
 import { useAdminData } from '@/hooks/useAdminData';
@@ -15,6 +15,8 @@ interface Category {
   slug: string;
   description?: string;
   sortOrder: number;
+  parentId?: number | null;
+  imageUrl?: string;
 }
 
 export default function CategoriesPage() {
@@ -24,13 +26,41 @@ export default function CategoriesPage() {
     error,
     refetch,
     pagination,
+    search,
+    filters,
     setPage,
     setLimit,
     setSearch,
+    setFilters,
   } = useAdminData<Category>({
     endpoint: '/api/admin/categories',
     limit: 20,
   });
+
+  const [parentOptions, setParentOptions] = useState<Category[]>([]);
+  const hasActiveFilters = !!search || Object.keys(filters).length > 0;
+
+  useEffect(() => {
+    fetch('/api/admin/categories?limit=500', { headers: getAuthHeaders() })
+      .then((res) => res.json())
+      .then((d) => d.success && d.data && setParentOptions(d.data))
+      .catch(() => {});
+  }, []);
+
+  const handleParentFilter = useCallback(
+    (value: string) => {
+      if (value === '') setFilters({});
+      else if (value === 'top') setFilters({ parentId: 'top' });
+      else setFilters({ parentId: parseInt(value, 10) });
+    },
+    [setFilters]
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setSearch('');
+    setFilters({});
+    setPage(1);
+  }, [setSearch, setFilters, setPage]);
 
   const handleDelete = useCallback(async (id: number) => {
     if (!confirm('Are you sure you want to delete this category?')) {
@@ -118,15 +148,75 @@ export default function CategoriesPage() {
           </Link>
         </div>
 
-        {/* Search */}
+        {/* Search and Filters */}
         <div style={{
+          display: 'flex',
+          gap: '1rem',
           marginBottom: '1.5rem',
+          flexWrap: 'wrap',
+          alignItems: 'center',
         }}>
           <SearchBar
-            value=""
+            value={search}
             onChange={setSearch}
             placeholder="Search categories by name, slug, or description..."
           />
+          <select
+            value={filters.parentId === undefined ? '' : filters.parentId === null || filters.parentId === 'top' ? 'top' : String(filters.parentId)}
+            onChange={(e) => handleParentFilter(e.target.value)}
+            style={{
+              padding: '0.75rem 1rem',
+              border: '2px solid #e2e8f0',
+              borderRadius: '8px',
+              fontSize: '0.9375rem',
+              background: 'white',
+              cursor: 'pointer',
+              color: '#475569',
+              minWidth: '180px',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#e2e8f0';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <option value="">All categories</option>
+            <option value="top">Top-level only</option>
+            {parentOptions.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                Children of: {cat.name}
+              </option>
+            ))}
+          </select>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              style={{
+                padding: '0.75rem 1rem',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '0.9375rem',
+                background: 'white',
+                cursor: 'pointer',
+                color: '#64748b',
+                fontWeight: '500',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#94a3b8';
+                e.currentTarget.style.background = '#f8fafc';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.background = 'white';
+              }}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
 
         {error && (
@@ -140,14 +230,19 @@ export default function CategoriesPage() {
             border: '1px solid #fca5a5',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '0.5rem',
+            flexWrap: 'wrap',
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            {error}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{error}</span>
+            </div>
+            <button type="button" onClick={() => refetch()} style={{ padding: '0.5rem 1rem', background: '#b91c1c', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: '600' }}>Retry</button>
           </div>
         )}
 
@@ -242,6 +337,19 @@ export default function CategoriesPage() {
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                        width: '72px',
+                      }}>
+                        Image
+                      </th>
+                      <th style={{
+                        padding: '1.25rem 1.5rem',
+                        textAlign: 'left',
+                        fontWeight: '600',
+                        fontSize: '0.75rem',
+                        color: '#475569',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
                       }}>
                         Name
                       </th>
@@ -310,6 +418,19 @@ export default function CategoriesPage() {
                           e.currentTarget.style.background = 'transparent';
                         }}
                       >
+                        <td style={{ padding: '1.25rem 1.5rem', verticalAlign: 'middle' }}>
+                          {category.imageUrl ? (
+                            <img
+                              src={category.imageUrl}
+                              alt=""
+                              width={48}
+                              height={48}
+                              style={{ objectFit: 'cover', borderRadius: '6px' }}
+                            />
+                          ) : (
+                            <span style={{ color: '#cbd5e1', fontSize: '0.75rem' }}>—</span>
+                          )}
+                        </td>
                         <td style={{ padding: '1.25rem 1.5rem' }}>
                           <div style={{ fontWeight: '600', color: '#0f172a' }}>
                             {category.name}

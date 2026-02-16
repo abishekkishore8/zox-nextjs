@@ -2,68 +2,107 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { PostImage } from "@/components/PostImage";
 import type { Post } from "@/lib/data-adapter";
 
-const PAGE_SIZE = 10;
-
 interface MoreNewsSectionProps {
-  posts: Post[];
+  initialPosts: Post[];
+  availableSlugs: string[];
   buttonText?: string;
-  pageSize?: number;
 }
 
 export function MoreNewsSection({
-  posts,
-  buttonText = "More Posts",
-  pageSize = 10,
+  initialPosts,
+  availableSlugs,
+  buttonText = "More News",
 }: MoreNewsSectionProps) {
-  const [visibleCount, setVisibleCount] = useState(pageSize);
-  const visiblePosts = posts.slice(0, visibleCount);
-  const hasMore = visibleCount < posts.length;
-  const loadMore = () => setVisibleCount((c) => Math.min(c + pageSize, posts.length));
+  // Posts that are already loaded (initially from server)
+  const [loadedPosts, setLoadedPosts] = useState<Post[]>(initialPosts);
+  // Slugs that are yet to be loaded
+  // initialPosts are already loaded, so we start after them if they are in the list?
+  // Actually page.tsx will pass slugs for *remaining* posts or *all* posts?
+  // Let's assume availableSlugs excludes the ones in initialPosts to be safe, or we handle index.
+  // Better pattern: page.tsx passes `moreNews` (limits to 15) and `moreNewsSlugs` (all matching slugs).
+  // We should slice `moreNewsSlugs` to ignore the first 15.
+
+  // Wait, `getMoreNewsSlugs` in data-adapter generally returns ALL slugs matching the criteria.
+  // `getMoreNewsPosts` returns the first N posts.
+  // So `availableSlugs` will likely contain the slugs of `initialPosts` too.
+  // We should filter them out or just rely on index.
+
+  // Let's assume standard behavior: we have X posts. We want to load more from the list of slugs.
+  // But we don't want to duplicate.
+
+  const [loading, setLoading] = useState(false);
+
+  // Normalized checking
+  const loadedIds = new Set(loadedPosts.map(p => p.slug));
+  const nextSlugs = availableSlugs.filter(slug => !loadedIds.has(slug));
+
+  const hasMore = nextSlugs.length > 0;
+
+  const loadMore = async () => {
+    if (!hasMore || loading) return;
+
+    setLoading(true);
+    // Load next 5 posts
+    const toLoad = nextSlugs.slice(0, 5);
+
+    try {
+      const newPosts = await Promise.all(
+        toLoad.map(async (slug) => {
+          try {
+            const res = await fetch(`/api/posts/${slug}`);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.success ? data.data : null;
+          } catch (e) {
+            return null;
+          }
+        })
+      );
+
+      const validPosts = newPosts.filter((p): p is Post => p !== null);
+      setLoadedPosts(prev => [...prev, ...validPosts]);
+    } catch (err) {
+      console.error("Failed to load more posts", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       <ul className="mvp-blog-story-list left relative infinite-content">
-        {visiblePosts.map((post) => (
+        {loadedPosts.map((post) => (
           <li key={post.id} className="mvp-blog-story-wrap left relative infinite-post">
             <Link href={`/post/${post.slug}`} rel="bookmark">
               <div className="mvp-blog-story-out relative">
-                <div className="mvp-blog-story-img left relative">
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    className="mvp-big-img"
-                    width={1000}
-                    height={600}
-                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                  />
-                  <Image
-                    src={post.imageSmall || post.image}
-                    alt={post.title}
-                    className="mvp-reg-img"
-                    width={400}
-                    height={240}
-                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                  />
-                  <Image
-                    src={post.imageSmall || post.image}
-                    alt={post.title}
-                    className="mvp-mob-img"
-                    width={330}
-                    height={200}
-                    style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                  />
-                </div>
+                {post.image && (
+                  <div className="mvp-blog-story-img left relative">
+                    <PostImage
+                      src={post.image || ''}
+                      alt={post.title}
+                      width={400}
+                      height={240}
+                      style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                      sizes="(max-width: 767px) 100vw, 400px"
+                    />
+                  </div>
+                )}
                 <div className="mvp-blog-story-in">
                   <div className="mvp-blog-story-text left relative">
                     <div className="mvp-cat-date-wrap left relative">
                       <span className="mvp-cd-cat left relative">{post.category}</span>
                       <span className="mvp-cd-date left relative">{post.timeAgo}</span>
                     </div>
-                    <h2>{post.title}</h2>
-                    <p>{post.excerpt}</p>
+                    <h2 className="post-heading-max-3-lines">{post.title}</h2>
+                    <p className="post-card-excerpt-max-3-lines">{post.excerpt}</p>
+                    <div className="read-more-link">
+                      <span>
+                        View More <i className="fa fa-long-arrow-right" aria-hidden="true" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -77,15 +116,15 @@ export function MoreNewsSection({
             type="button"
             className="mvp-inf-more-but"
             onClick={loadMore}
-            aria-label="Load more news"
+            disabled={loading}
           >
-            {buttonText}
+            {loading ? "Loading..." : buttonText}
           </button>
-        ) : posts.length > PAGE_SIZE ? (
+        ) : (
           <span className="mvp-inf-more-but" aria-hidden="true">
             No more posts
           </span>
-        ) : null}
+        )}
       </div>
     </>
   );

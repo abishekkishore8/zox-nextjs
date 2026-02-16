@@ -1,12 +1,12 @@
 import Link from "next/link";
-import Image from "next/image";
+import { PostImage } from "@/components/PostImage";
 import type { Post } from "@/lib/data-adapter";
 
 interface HomeWidgetSectionProps {
   title: string;
   categorySlug: string;
   featured: Post | null;
-  right: [Post, Post];
+  right: [Post | null, Post | null];
   list: Post[];
   /** "left" = 1 big left, 2 right (Entertainment). "middle" = 2 stacked left, 1 big right (Business). */
   mainpos?: "left" | "middle";
@@ -32,25 +32,16 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
               <div className="mvp-widget-feat2-main left relative">
                 {/* When mainpos=middle this div floats right so the 2 "right" posts appear on the left */}
                 <div className={leftClassName}>
-                  {featured && (
+                  {featured && featured.image && (
                     <Link href={`/post/${featured.slug}`} rel="bookmark">
                       <div className="mvp-widget-feat2-left-cont left relative">
                         <div className="mvp-feat1-feat-img left relative" style={{ position: "relative", height: 600 }}>
-                          <Image
-                            src={featured.image}
+                          <PostImage
+                            src={featured.image || ''}
                             alt={featured.title}
                             fill
-                            className="mvp-reg-img"
-                            sizes="560px"
+                            sizes="(max-width: 767px) 100vw, 560px"
                             style={{ objectFit: "cover" }}
-                          />
-                          <Image
-                            src={featured.imageSmall || featured.image}
-                            alt={featured.title}
-                            className="mvp-mob-img"
-                            width={330}
-                            height={200}
-                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
                           />
                         </div>
                         <div className="mvp-feat1-feat-text left relative">
@@ -58,33 +49,25 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
                             <span className="mvp-cd-cat left relative">{featured.category}</span>
                             <span className="mvp-cd-date left relative">{featured.timeAgo}</span>
                           </div>
-                          <h2 className="mvp-stand-title">{featured.title}</h2>
-                          <p>{featured.excerpt}</p>
+                          <h2 className="mvp-stand-title post-heading-max-3-lines">{featured.title}</h2>
+                          <p className="post-card-excerpt-max-3-lines">{featured.excerpt}</p>
                         </div>
                       </div>
                     </Link>
                   )}
                 </div>
                 <div className="mvp-widget-feat2-right left relative">
-                  {right[0] && (
+                  {right[0] && right[0].image && (
                     <Link href={`/post/${right[0].slug}`} rel="bookmark">
                       <div className="mvp-widget-feat2-right-cont left relative">
                         <div className="mvp-widget-feat2-right-img left relative">
-                          <Image
-                            src={right[0].imageSmall || right[0].image}
+                          <PostImage
+                            src={right[0].image || ''}
                             alt={right[0].title}
                             width={400}
                             height={240}
-                            className="mvp-reg-img"
                             style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                          />
-                          <Image
-                            src={right[0].imageSmall || right[0].image}
-                            alt={right[0].title}
-                            width={330}
-                            height={200}
-                            className="mvp-mob-img"
-                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                            sizes="(max-width: 767px) 100vw, 400px"
                           />
                         </div>
                         <div className="mvp-widget-feat2-right-text left relative">
@@ -92,30 +75,22 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
                             <span className="mvp-cd-cat left relative">{right[0].category}</span>
                             <span className="mvp-cd-date left relative">{right[0].timeAgo}</span>
                           </div>
-                          <h2>{right[0].title}</h2>
+                          <h2 className="post-heading-max-3-lines">{right[0].title}</h2>
                         </div>
                       </div>
                     </Link>
                   )}
-                  {right[1] && (
+                  {right[1] && right[1].image && (
                     <Link href={`/post/${right[1].slug}`} rel="bookmark">
                       <div className="mvp-widget-feat2-right-cont left relative">
                         <div className="mvp-widget-feat2-right-img left relative">
-                          <Image
-                            src={right[1].imageSmall || right[1].image}
+                          <PostImage
+                            src={right[1].image || ''}
                             alt={right[1].title}
                             width={400}
                             height={240}
-                            className="mvp-reg-img"
                             style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                          />
-                          <Image
-                            src={right[1].imageSmall || right[1].image}
-                            alt={right[1].title}
-                            width={330}
-                            height={200}
-                            className="mvp-mob-img"
-                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                            sizes="(max-width: 767px) 100vw, 400px"
                           />
                         </div>
                         <div className="mvp-widget-feat2-right-text left relative">
@@ -123,7 +98,7 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
                             <span className="mvp-cd-cat left relative">{right[1].category}</span>
                             <span className="mvp-cd-date left relative">{right[1].timeAgo}</span>
                           </div>
-                          <h2>{right[1].title}</h2>
+                          <h2 className="post-heading-max-3-lines">{right[1].title}</h2>
                         </div>
                       </div>
                     </Link>
@@ -134,24 +109,18 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
             <div className="mvp-widget-feat2-side left relative">
               <div className="mvp-widget-feat2-side-list left relative">
                 <div className="mvp-feat1-list left relative">
-                  {list.map((post) => (
+                  {list.filter((p) => p.image).map((post) => (
                     <Link key={post.id} href={`/post/${post.slug}`} rel="bookmark">
                       <div className="mvp-feat1-list-cont left relative">
                         <div className="mvp-feat1-list-out relative">
                           <div className="mvp-feat1-list-img left relative">
-                            <Image
-                              src={post.imageSmall || post.image}
+                            <PostImage
+                              src={post.image || ''}
                               alt={post.title}
                               width={80}
                               height={80}
-                              className="mvp-reg-img"
-                            />
-                            <Image
-                              src={post.imageSmall || post.image}
-                              alt={post.title}
-                              width={80}
-                              height={80}
-                              className="mvp-mob-img"
+                              sizes="80px"
+                              style={{ objectFit: "cover" }}
                             />
                           </div>
                           <div className="mvp-feat1-list-in">
@@ -160,7 +129,7 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
                                 <span className="mvp-cd-cat left relative">{post.category}</span>
                                 <span className="mvp-cd-date left relative">{post.timeAgo}</span>
                               </div>
-                              <h2>{post.title}</h2>
+                              <h2 className="post-heading-max-3-lines">{post.title}</h2>
                             </div>
                           </div>
                         </div>
@@ -170,7 +139,7 @@ export function HomeWidgetSection({ title, categorySlug, featured, right, list, 
                 </div>
                 <Link href={`/category/${categorySlug}`}>
                   <div className="mvp-widget-feat2-side-more-but left relative">
-                    <span className="mvp-widget-feat2-side-more">More {title}</span>
+                    <span className="mvp-widget-feat2-side-more">Read More</span>
                     <i className="fa fa-long-arrow-right" aria-hidden="true"></i>
                   </div>
                 </Link>

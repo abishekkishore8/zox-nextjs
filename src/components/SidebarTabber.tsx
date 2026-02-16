@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { PostImage } from "@/components/PostImage";
 import { useEffect } from "react";
 import type { Post } from "@/lib/data-adapter";
 
@@ -12,20 +12,21 @@ interface SidebarTabberProps {
 }
 
 function TabItem({ post }: { post: Post }) {
+  if (!post.image) return null;
   return (
     <Link href={`/post/${post.slug}`} rel="bookmark">
       <div className="mvp-feat1-list-cont left relative">
         <div className="mvp-feat1-list-out relative">
           <div className="mvp-feat1-list-img left relative">
-            <Image
-              src={post.imageSmall || post.image}
+            <PostImage
+              src={post.image || ''}
               alt={post.title}
               width={80}
               height={80}
               className="mvp-reg-img"
             />
-            <Image
-              src={post.imageSmall || post.image}
+            <PostImage
+              src={post.image || ''}
               alt={post.title}
               width={80}
               height={80}
@@ -38,7 +39,7 @@ function TabItem({ post }: { post: Post }) {
                 <span className="mvp-cd-cat left relative">{post.category}</span>
                 <span className="mvp-cd-date left relative">{post.timeAgo}</span>
               </div>
-              <h2>{post.title}</h2>
+              <h2 className="post-heading-max-3-lines">{post.title}</h2>
             </div>
           </div>
         </div>
@@ -93,17 +94,17 @@ export function SidebarTabber({ latest, trending, videos }: SidebarTabberProps) 
           </ul>
         </div>
         <div id="mvp-tab-col1" className="mvp-feat1-list left relative mvp-tab-col-cont">
-          {latest.map((post) => (
+          {latest.filter((p) => p.image).map((post) => (
             <TabItem key={post.id} post={post} />
           ))}
         </div>
         <div id="mvp-tab-col2" className="mvp-feat1-list left relative mvp-tab-col-cont">
-          {trending.map((post) => (
+          {trending.filter((p) => p.image).map((post) => (
             <TabItem key={post.id} post={post} />
           ))}
         </div>
         <div id="mvp-tab-col3" className="mvp-feat1-list left relative mvp-tab-col-cont">
-          {videos.map((post) => (
+          {videos.filter((p) => p.image).map((post) => (
             <TabItem key={post.id} post={post} />
           ))}
         </div>

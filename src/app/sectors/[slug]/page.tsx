@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getPostsByCategory, getStartupEvents } from "@/lib/data-adapter";
+import { getPostsByCategory, getStartupEvents, hasThumbnail } from "@/lib/data-adapter";
+import { PostImage } from "@/components/PostImage";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { MoreNewsSection } from "@/components/MoreNewsSection";
@@ -11,6 +12,8 @@ export const revalidate = 3600; // 1 hour
 // Allow dynamic params for sectors not pre-generated
 export const dynamicParams = true;
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://startupnews.thebackend.in";
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const sectorItem = siteConfig.menu
@@ -20,11 +23,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         .find(item => item.id === "sectors")
         ?.children?.find(child => child.href === `/sectors/${slug}`);
     const title = sectorItem?.label || flySectorItem?.label || slug.charAt(0).toUpperCase() + slug.slice(1);
+    const description = `Latest ${title} startup news, funding rounds, and industry analysis on StartupNews.fyi.`;
     return {
-        title: `${title} Archives - StartupNews.fyi`,
-        description: `Latest news and updates from the ${title} sector.`,
+        title: `${title} News & Updates`,
+        description,
+        alternates: { canonical: `${SITE_URL}/sectors/${slug}` },
+        openGraph: {
+            title: `${title} News & Updates – StartupNews.fyi`,
+            description,
+            url: `${SITE_URL}/sectors/${slug}`,
+            siteName: "StartupNews.fyi",
+            type: "website",
+        },
     };
 }
+
 
 export default async function SectorPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -39,8 +52,9 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
         ?.children?.find(child => child.href === `/sectors/${slug}`);
     const categoryName = sectorItem?.label || flySectorItem?.label || slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-    const featuredPost = posts[0];
-    const listPosts = posts.slice(1);
+    const withThumb = posts.filter(hasThumbnail);
+    const featuredPost = withThumb[0] ?? null;
+    const listPosts = withThumb.slice(1);
 
     return (
         <div className="mvp-main-blog-wrap left relative">
@@ -48,28 +62,26 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                 <div className="mvp-main-blog-cont left relative">
 
                     {/* Featured Post - mvp-feat6 layout (exact structure from live site) */}
-                    {featuredPost && (
+                    {featuredPost && hasThumbnail(featuredPost) && (
                         <section id="mvp-feat6-wrap" className="left relative">
                             <Link href={`/post/${featuredPost.slug}`} rel="bookmark">
                                 <div id="mvp-feat6-main" className="left relative">
                                     <div id="mvp-feat6-img" className="right relative">
-                                        <img
+                                        <PostImage
                                             width={1000}
                                             height={600}
-                                            src="https://s3.amazonaws.com/startupnews-media-2026/uploads/2026/02/Grok-CSAM-controversy-intensifies-1000x600.jpg"
+                                            src={featuredPost.image}
                                             className="mvp-reg-img wp-post-image"
                                             alt={featuredPost.title}
-                                            title={featuredPost.title}
-                                            decoding="async"
+                                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
                                         />
-                                        <img
+                                        <PostImage
                                             width={560}
                                             height={600}
-                                            src="https://s3.amazonaws.com/startupnews-media-2026/uploads/2026/02/Grok-CSAM-controversy-intensifies-560x600.jpg"
+                                            src={featuredPost.image || ''}
                                             className="mvp-mob-img wp-post-image"
                                             alt={featuredPost.title}
-                                            title={featuredPost.title}
-                                            decoding="async"
+                                            style={{ width: "100%", height: "auto", objectFit: "cover" }}
                                         />
                                     </div>
                                     <div id="mvp-feat6-text">
@@ -77,7 +89,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
                                             <span className="mvp-feat1-pop-head">{categoryName}</span>
                                         </h3>
                                         <h2>{featuredPost.title}</h2>
-                                        <p>{featuredPost.excerpt}</p>
+                                        <p className="post-card-excerpt-max-3-lines">{featuredPost.excerpt}</p>
                                     </div>
                                 </div>
                             </Link>
@@ -92,7 +104,7 @@ export default async function SectorPage({ params }: { params: Promise<{ slug: s
 
 
                                 {listPosts.length > 0 ? (
-                                    <MoreNewsSection posts={listPosts} />
+                                    <MoreNewsSection initialPosts={listPosts} availableSlugs={[]} />
                                 ) : (
                                     <div className="mvp-blog-story-text left relative">
                                         <p>No posts found in this category.</p>

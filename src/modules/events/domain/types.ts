@@ -10,8 +10,10 @@ export interface StartupEvent {
   title: string;
   url: string;
   excerpt?: string;
+  description?: string;
   image?: string;
   status?: 'upcoming' | 'ongoing' | 'past' | 'cancelled';
+  eventTime?: string;
 }
 
 /**

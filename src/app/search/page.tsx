@@ -1,20 +1,22 @@
 import Link from "next/link";
-import Image from "next/image";
-import { getAllPosts } from "@/lib/data-adapter";
-// import { Sidebar } from "@/components/Sidebar"; // Unused
+import { PostImage } from "@/components/PostImage";
+import { getAllPosts, getStartupEvents, hasThumbnail, getPostImage } from "@/lib/data-adapter";
 import { StickySidebarContent } from "@/components/StickySidebarContent";
 import { StartupEventsSection } from "@/components/StartupEventsSection";
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
-  const allPosts = await getAllPosts();
+  const startupEvents = await getStartupEvents();
+  const allPosts = q ? await getAllPosts(300) : [];
   const posts = q
-    ? allPosts.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q.toLowerCase()) ||
-        p.excerpt.toLowerCase().includes(q.toLowerCase()) ||
-        p.category.toLowerCase().includes(q.toLowerCase())
-    )
+    ? allPosts
+        .filter(hasThumbnail)
+        .filter(
+          (p) =>
+            p.title.toLowerCase().includes(q.toLowerCase()) ||
+            p.excerpt.toLowerCase().includes(q.toLowerCase()) ||
+            p.category.toLowerCase().includes(q.toLowerCase())
+        )
     : [];
 
   return (
@@ -45,35 +47,37 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                   </div>
                 ) : (
                   <ul className="mvp-blog-story-list left relative infinite-content">
-                    {posts.map((post) => (
+                    {posts.filter(hasThumbnail).map((post) => (
                       <li key={post.id} className="mvp-blog-story-wrap left relative infinite-post">
                         <Link href={`/post/${post.slug}`} rel="bookmark">
                           <div className="mvp-blog-story-out relative">
-                            <div className="mvp-blog-story-img left relative">
-                              <Image
-                                src={post.image}
-                                alt={post.title}
-                                className="mvp-reg-img mvp-big-img"
-                                width={800}
-                                height={500}
-                              />
-                              <Image
-                                src={post.imageSmall || post.image}
-                                alt={post.title}
-                                className="mvp-mob-img"
-                                width={330}
-                                height={200}
-                                style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                              />
-                            </div>
+                            {hasThumbnail(post) && (
+                              <div className="mvp-blog-story-img left relative">
+                                <PostImage
+                                  src={getPostImage(post)}
+                                  alt={post.title}
+                                  className="mvp-reg-img mvp-big-img"
+                                  width={800}
+                                  height={500}
+                                />
+                                <PostImage
+                                  src={getPostImage(post)}
+                                  alt={post.title}
+                                  className="mvp-mob-img"
+                                  width={330}
+                                  height={200}
+                                  style={{ width: "100%", height: "auto", objectFit: "cover" }}
+                                />
+                              </div>
+                            )}
                             <div className="mvp-blog-story-in">
                               <div className="mvp-blog-story-text left relative">
                                 <div className="mvp-cat-date-wrap left relative">
                                   <span className="mvp-cd-cat left relative">{post.category}</span>
                                   <span className="mvp-cd-date left relative">{post.timeAgo}</span>
                                 </div>
-                                <h2>{post.title}</h2>
-                                <p>{post.excerpt}</p>
+                                <h2 className="post-heading-max-3-lines">{post.title}</h2>
+                                <p className="post-card-excerpt-max-3-lines">{post.excerpt}</p>
                               </div>
                             </div>
                           </div>
@@ -91,7 +95,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             </div>
             <div id="mvp-side-wrap" className="left relative theiaStickySidebar">
               <StickySidebarContent>
-                <StartupEventsSection />
+                <StartupEventsSection events={startupEvents} />
               </StickySidebarContent>
             </div>
           </div>

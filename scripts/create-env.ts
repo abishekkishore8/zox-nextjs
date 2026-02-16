@@ -40,6 +40,14 @@ NODE_ENV=development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 PORT=3000
 
+# Post images: when DB has relative URLs (e.g. /uploads/...), they are resolved against this base.
+# Also used by npm run db:fix-post-images to normalize existing post image URLs in the DB.
+# NEXT_PUBLIC_IMAGE_BASE_URL=https://startupnews-media-2026.s3.us-east-1.amazonaws.com
+# S3_IMAGE_BASE_URL=https://startupnews-media-2026.s3.us-east-1.amazonaws.com
+# When bucket is not public, set S3_USE_PRESIGNED_URLS=true so featured images use presigned URLs (requires AWS_* keys).
+# S3_USE_PRESIGNED_URLS=true
+# S3_PRESIGNED_EXPIRES_SECONDS=3600
+
 # ============================================
 # JWT Authentication Configuration
 # ============================================

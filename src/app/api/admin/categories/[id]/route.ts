@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/shared/middleware/auth.middleware';
+import { requireAuth } from '@/shared/middleware/auth.middleware';
 import { CategoriesService } from '@/modules/categories/service/categories.service';
 import { CategoriesRepository } from '@/modules/categories/repository/categories.repository';
 import { CategoryEntity } from '@/modules/categories/domain/types';
@@ -20,7 +20,7 @@ export async function GET(
   request: NextRequest,
   { params }: RouteParams
 ) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuth(request, 'editor');
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -73,7 +73,7 @@ export async function PUT(
   request: NextRequest,
   { params }: RouteParams
 ) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuth(request, 'editor');
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -126,7 +126,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
 ) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuth(request, 'editor');
   if (auth instanceof NextResponse) return auth;
 
   try {

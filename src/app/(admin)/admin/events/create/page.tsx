@@ -3,13 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthHeaders } from '@/lib/admin-auth';
-import ImageUpload from '@/components/admin/ImageUpload';
+import { getAuthHeaders, getAdminToken } from '@/lib/admin-auth';
+import RichTextEditor from '@/components/admin/RichTextEditor';
+import { EVENTS_REGION_ORDER } from '@/lib/events-constants';
+import { getPresignedUploadUrl } from '@/app/actions/upload-image';
 
 export default function CreateEventPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -34,6 +38,90 @@ export default function CreateEventPage() {
     setFormData({ ...formData, title, slug: generateSlug(title) });
   };
 
+  /**
+   * Get a presigned S3 PUT URL.
+   * Strategy: Try Server Action first, fall back to API route.
+   */
+  const getUploadUrl = async (filename: string, contentType: string, token: string) => {
+    // Attempt 1: Server Action
+    try {
+      const result = await getPresignedUploadUrl(filename, contentType, token);
+      if (result.success && result.data) {
+        return result.data;
+      }
+      console.warn('Server Action presign failed:', result.error);
+    } catch (e) {
+      console.warn('Server Action presign threw:', e);
+    }
+
+    // Attempt 2: API route (tiny JSON, no file data)
+    try {
+      const res = await fetch('/api/admin/presign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Admin-Token': token,
+        },
+        body: JSON.stringify({ filename, contentType }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          return data.data;
+        }
+      }
+      console.warn('API presign failed:', res.status);
+    } catch (e) {
+      console.warn('API presign threw:', e);
+    }
+
+    throw new Error('Could not get upload URL. Please try again or contact support.');
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Image must be under 50MB');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const token = getAdminToken();
+      if (!token) {
+        throw new Error('Please log in again (no auth token found)');
+      }
+
+      // Step 1: Get presigned S3 PUT URL (tiny request, no file data)
+      const { uploadUrl, fileUrl } = await getUploadUrl(file.name, file.type, token);
+
+      // Step 2: Upload file directly to S3 (bypasses CloudFront WAF entirely)
+      const s3Response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+
+      if (!s3Response.ok) {
+        throw new Error(`S3 upload failed (${s3Response.status}). Please try again.`);
+      }
+
+      // Step 3: Set the final S3 URL in the form
+      setFormData(prev => ({ ...prev, imageUrl: fileUrl }));
+      setImageFile(file);
+    } catch (err) {
+      console.error('Image upload error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+      setImageFile(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -48,6 +136,12 @@ export default function CreateEventPage() {
 
       const data = await response.json();
 
+      if (!response.ok) {
+        setError(data.error || `Failed to create event (${response.status})`);
+        setLoading(false);
+        return;
+      }
+
       if (!data.success) {
         setError(data.error || 'Failed to create event');
         setLoading(false);
@@ -56,7 +150,8 @@ export default function CreateEventPage() {
 
       router.push('/admin/events');
     } catch (err) {
-      setError('An error occurred while creating the event');
+      const message = err instanceof Error ? err.message : 'An error occurred while creating the event';
+      setError(message);
       setLoading(false);
     }
   };
@@ -66,271 +161,116 @@ export default function CreateEventPage() {
       <div style={{ marginBottom: '2rem' }}>
         <Link
           href="/admin/events"
-          style={{
-            color: '#48bb78',
-            textDecoration: 'none',
-            marginBottom: '1rem',
-            display: 'inline-block',
-          }}
+          style={{ color: '#48bb78', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block' }}
         >
           ← Back to Events
         </Link>
-        <h1 style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          color: '#1a202c',
-          marginTop: '0.5rem',
-        }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1a202c', marginTop: '0.5rem' }}>
           Create New Event
         </h1>
       </div>
 
       {error && (
-        <div style={{
-          background: '#fed7d7',
-          color: '#c53030',
-          padding: '1rem',
-          borderRadius: '4px',
-          marginBottom: '1rem',
-        }}>
+        <div style={{ background: '#fed7d7', color: '#c53030', padding: '1rem', borderRadius: '4px', marginBottom: '1rem' }}>
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{
-        background: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-      }}>
+      <form onSubmit={handleSubmit} style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            Title *
-          </label>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            required
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-            }}
-          />
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Title *</label>
+          <input type="text" value={formData.title} onChange={(e) => handleTitleChange(e.target.value)} required
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }} />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            Slug *
-          </label>
-          <input
-            type="text"
-            value={formData.slug}
-            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-            required
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-            }}
-          />
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Slug *</label>
+          <input type="text" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} required
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }} />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            Location *
-          </label>
-          <input
-            type="text"
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            required
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-            }}
-            placeholder="e.g., San Francisco, CA"
-          />
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Location *</label>
+          <select value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} required
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }}>
+            <option value="">Select region</option>
+            {EVENTS_REGION_ORDER.map((region) => (
+              <option key={region} value={region}>{region}</option>
+            ))}
+          </select>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
           <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-              color: '#4a5568',
-            }}>
-              Event Date *
-            </label>
-            <input
-              type="date"
-              value={formData.eventDate}
-              onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #e2e8f0',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-              }}
-            />
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Event Date *</label>
+            <input type="date" value={formData.eventDate} onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })} required
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }} />
           </div>
           <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-              color: '#4a5568',
-            }}>
-              Event Time
-            </label>
-            <input
-              type="time"
-              value={formData.eventTime}
-              onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #e2e8f0',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-              }}
-            />
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Event Time</label>
+            <input type="time" value={formData.eventTime} onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }} />
           </div>
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            Excerpt
-          </label>
-          <textarea
-            value={formData.excerpt}
-            onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            rows={3}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-            }}
-          />
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Excerpt</label>
+          <textarea value={formData.excerpt} onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })} rows={3}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box', fontFamily: 'inherit' }} />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            Description
-          </label>
-          <textarea
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Description</label>
+          <RichTextEditor
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={5}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-            }}
-          />
-        </div>
-
-        <ImageUpload
-          value={formData.imageUrl}
-          onChange={(url) => setFormData({ ...formData, imageUrl: url })}
-          label="Event Image"
-        />
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            External URL
-          </label>
-          <input
-            type="url"
-            value={formData.externalUrl}
-            onChange={(e) => setFormData({ ...formData, externalUrl: e.target.value })}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-            }}
-            placeholder="https://..."
+            onChange={(description) => setFormData({ ...formData, description })}
+            placeholder="Event description (formatting supported)..."
+            minHeight={200}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '0.5rem',
-            fontWeight: '500',
-            color: '#4a5568',
-          }}>
-            Status
-          </label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'upcoming' | 'ongoing' | 'past' | 'cancelled' })}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              boxSizing: 'border-box',
-            }}
-          >
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Event Image</label>
+          {formData.imageUrl && (
+            <div style={{ marginBottom: '1rem', position: 'relative', display: 'inline-block' }}>
+              <img src={formData.imageUrl} alt="Preview" style={{ maxWidth: 300, maxHeight: 200, borderRadius: 4, border: '1px solid #e2e8f0' }} />
+              <button type="button" onClick={() => { setFormData((p) => ({ ...p, imageUrl: '' })); setImageFile(null); }}
+                style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: '#e53e3e', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ×
+              </button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <label style={{
+              padding: '0.75rem 1.5rem', background: uploading ? '#cbd5e0' : '#48bb78',
+              color: 'white', borderRadius: 4, cursor: uploading ? 'wait' : 'pointer',
+              fontSize: '0.875rem', fontWeight: 500, display: 'inline-block', textAlign: 'center',
+            }}>
+              {uploading ? 'Uploading...' : 'Choose image (uploads immediately)'}
+              <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
+                onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file); }} />
+            </label>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <input type="url" value={formData.imageUrl}
+                onChange={(e) => setFormData((p) => ({ ...p, imageUrl: e.target.value }))}
+                placeholder="Or enter image URL"
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: 4, fontSize: '1rem', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.8125rem', color: '#64748b' }}>Select an image to upload it immediately. The URL will appear above.</p>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>External URL</label>
+          <input type="url" value={formData.externalUrl} onChange={(e) => setFormData({ ...formData, externalUrl: e.target.value })}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }}
+            placeholder="https://..." />
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#4a5568' }}>Status</label>
+          <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as 'upcoming' | 'ongoing' | 'past' | 'cancelled' })}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }}>
             <option value="upcoming">Upcoming</option>
             <option value="ongoing">Ongoing</option>
             <option value="past">Past</option>
@@ -339,35 +279,12 @@ export default function CreateEventPage() {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: '0.75rem 2rem',
-              background: loading ? '#a0aec0' : '#48bb78',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              fontWeight: '500',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
+          <button type="submit" disabled={loading || uploading}
+            style={{ padding: '0.75rem 2rem', background: loading || uploading ? '#a0aec0' : '#48bb78', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', fontWeight: '500', cursor: loading || uploading ? 'not-allowed' : 'pointer' }}>
             {loading ? 'Creating...' : 'Create Event'}
           </button>
-          <Link
-            href="/admin/events"
-            style={{
-              padding: '0.75rem 2rem',
-              background: '#e2e8f0',
-              color: '#4a5568',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              fontSize: '1rem',
-              fontWeight: '500',
-              display: 'inline-block',
-            }}
-          >
+          <Link href="/admin/events"
+            style={{ padding: '0.75rem 2rem', background: '#e2e8f0', color: '#4a5568', borderRadius: '4px', textDecoration: 'none', fontSize: '1rem', fontWeight: '500', display: 'inline-block' }}>
             Cancel
           </Link>
         </div>
@@ -375,4 +292,3 @@ export default function CreateEventPage() {
     </div>
   );
 }
-

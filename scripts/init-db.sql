@@ -129,10 +129,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- Settings table
 CREATE TABLE IF NOT EXISTS settings (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    key VARCHAR(255) UNIQUE NOT NULL,
+    `key` VARCHAR(255) UNIQUE NOT NULL,
     value TEXT,
     type VARCHAR(50) DEFAULT 'string',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_key (key)
+    INDEX idx_key (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

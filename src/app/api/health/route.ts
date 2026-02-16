@@ -12,7 +12,7 @@ export async function GET() {
     timestamp: string;
     services: {
       database: 'up' | 'down';
-      cache: 'up' | 'down';
+      cache: 'up' | 'down' | 'disabled';
     };
   } = {
     status: 'healthy',
@@ -35,11 +35,15 @@ export async function GET() {
     console.error('Database health check failed:', error);
   }
 
-  // Check Redis cache
+  // Check Redis cache (optional – no crash when Redis missing)
   try {
     const redis = await getRedisClient();
-    await redis.ping();
-    health.services.cache = 'up';
+    if (redis) {
+      await redis.ping();
+      health.services.cache = 'up';
+    } else {
+      health.services.cache = 'disabled';
+    }
   } catch (error) {
     health.status = health.status === 'degraded' ? 'unhealthy' : 'degraded';
     console.error('Redis health check failed:', error);

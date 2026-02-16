@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/shared/middleware/auth.middleware';
+import { requireAuth } from '@/shared/middleware/auth.middleware';
 import { CategoriesService } from '@/modules/categories/service/categories.service';
 import { CategoriesRepository } from '@/modules/categories/repository/categories.repository';
+
+export const maxDuration = 60;
 
 // Initialize services
 const categoriesRepository = new CategoriesRepository();
@@ -12,12 +14,13 @@ const categoriesService = new CategoriesService(categoriesRepository);
  * Get all categories with pagination
  */
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search');
+    const parentIdParam = searchParams.get('parentId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
@@ -26,8 +29,9 @@ export async function GET(request: NextRequest) {
       limit?: number;
       offset?: number;
       search?: string;
+      parentId?: number | null;
     } = {
-      limit: Math.min(limit, 100), // Max 100 items per page
+      limit: Math.min(limit, 500), // Allow up to 500 so RSS feed create/edit get all categories
       offset,
     };
 
@@ -35,12 +39,24 @@ export async function GET(request: NextRequest) {
       filters.search = search;
     }
 
-    // Get total count for pagination
-    const countFilters: { search?: string } = {};
-    if (search) countFilters.search = search;
+    if (parentIdParam !== null && parentIdParam !== undefined) {
+      if (parentIdParam === 'top' || parentIdParam === '') {
+        filters.parentId = null; // Top-level only
+      } else {
+        const parsed = parseInt(parentIdParam, 10);
+        if (!isNaN(parsed)) filters.parentId = parsed;
+      }
+    }
 
-    const total = await categoriesService.countCategories(countFilters);
-    const categories = await categoriesService.getAllCategories(filters);
+    // Get total count for pagination
+    const countFilters: { search?: string; parentId?: number | null } = {};
+    if (search) countFilters.search = search;
+    if (filters.parentId !== undefined) countFilters.parentId = filters.parentId;
+
+    const [total, categories] = await Promise.all([
+      categoriesService.countCategories(countFilters),
+      categoriesService.getAllCategories(filters),
+    ]);
 
     const totalPages = Math.ceil(total / limit);
 
@@ -71,7 +87,7 @@ export async function GET(request: NextRequest) {
  * Create new category
  */
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request);
+  const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

@@ -23,8 +23,10 @@ export function entityToEvent(entity: EventEntity): StartupEvent {
     title: entity.title,
     url: entity.external_url || `${EVENTS_BASE}/${entity.slug}/`,
     excerpt: entity.excerpt,
+    description: entity.description,
     image: entity.image_url || DEFAULT_EVENT_IMAGE,
     status: entity.status,
+    eventTime: entity.event_time,
   };
 }
 

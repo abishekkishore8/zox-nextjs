@@ -15,6 +15,10 @@ import { getDbConnection, closeDbConnection, query } from '../src/shared/databas
 import { mockPosts, startupEvents } from '../src/lib/data';
 import { slugify } from '../src/shared/utils/string.utils';
 import bcrypt from 'bcryptjs';
+import { loadEnvConfig } from '@next/env';
+
+// Load environment variables from .env.local
+loadEnvConfig(process.cwd());
 
 // Helper function to generate slug from string (fallback if slugify not available)
 function generateSlug(text: string): string {
@@ -30,7 +34,7 @@ function parseDate(dateString: string): Date {
       january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
       july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
     };
-    
+
     const parts = dateString.toLowerCase().split(' ');
     if (parts.length >= 3) {
       const day = parseInt(parts[0]);
@@ -39,7 +43,7 @@ function parseDate(dateString: string): Date {
       return new Date(year, month, day);
     }
   }
-  
+
   // Try ISO format
   const date = new Date(dateString);
   return isNaN(date.getTime()) ? new Date() : date;
@@ -57,7 +61,7 @@ async function seedDatabase() {
       // 1. Create Admin User
       // ============================================
       console.log('📝 Creating admin user...');
-      
+
       const adminEmail = process.env.ADMIN_EMAIL || 'admin@startupnews.fyi';
       const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123!';
       const adminName = process.env.ADMIN_NAME || 'Admin User';
@@ -73,7 +77,7 @@ async function seedDatabase() {
       if (existingAdmin.length > 0) {
         adminUserId = existingAdmin[0].id;
         console.log(`   ✅ Admin user already exists (ID: ${adminUserId})`);
-        
+
         // Update password if needed
         const passwordHash = await bcrypt.hash(adminPassword, 10);
         await query(
@@ -88,7 +92,7 @@ async function seedDatabase() {
            VALUES (?, ?, ?, 'admin', TRUE)`,
           [adminEmail, passwordHash, adminName]
         ) as { insertId: number };
-        
+
         adminUserId = result.insertId;
         console.log(`   ✅ Admin user created (ID: ${adminUserId})`);
         console.log(`   📧 Email: ${adminEmail}`);
@@ -102,7 +106,7 @@ async function seedDatabase() {
 
       // Extract unique categories from posts
       const categoryMap = new Map<string, { name: string; slug: string }>();
-      
+
       // Add categories from posts
       for (const post of mockPosts) {
         if (post.category && post.categorySlug) {
@@ -148,7 +152,7 @@ async function seedDatabase() {
             `INSERT INTO categories (name, slug, sort_order) VALUES (?, ?, ?)`,
             [category.name, slug, categorySortOrder++]
           ) as { insertId: number };
-          
+
           categoryId = result.insertId;
           console.log(`   ✅ Category "${category.name}" created (ID: ${categoryId})`);
         }

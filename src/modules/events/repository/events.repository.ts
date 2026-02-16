@@ -20,6 +20,14 @@ export class EventsRepository {
     if (filters?.status) {
       sql += ' AND status = ?';
       params.push(filters.status);
+      // Expire by date: upcoming = future or today; past = before today; ongoing = today only
+      if (filters.status === 'upcoming') {
+        sql += ' AND event_date >= CURDATE()';
+      } else if (filters.status === 'past') {
+        sql += ' AND event_date < CURDATE()';
+      } else if (filters.status === 'ongoing') {
+        sql += ' AND event_date = CURDATE()';
+      }
     }
 
     if (filters?.search) {
@@ -62,6 +70,13 @@ export class EventsRepository {
     if (filters?.status) {
       sql += ' AND status = ?';
       params.push(filters.status);
+      if (filters.status === 'upcoming') {
+        sql += ' AND event_date >= CURDATE()';
+      } else if (filters.status === 'past') {
+        sql += ' AND event_date < CURDATE()';
+      } else if (filters.status === 'ongoing') {
+        sql += ' AND event_date = CURDATE()';
+      }
     }
 
     if (filters?.search) {
@@ -76,12 +91,37 @@ export class EventsRepository {
     return count ? Number(count) : 0;
   }
 
+  /**
+   * Set status to 'past' for events whose event_date is before today and status is 'upcoming' or 'ongoing'.
+   * Call this so the DB status stays in sync and admin/APIs see correct status.
+   */
+  async markPastEventsAsExpired(): Promise<void> {
+    await query(
+      `UPDATE events SET status = 'past'
+       WHERE status IN ('upcoming', 'ongoing') AND event_date < CURDATE()`
+    );
+  }
+
   async findById(id: number): Promise<EventEntity | null> {
     return queryOne<EventEntity>('SELECT * FROM events WHERE id = ?', [id]);
   }
 
   async findBySlug(slug: string): Promise<EventEntity | null> {
     return queryOne<EventEntity>('SELECT * FROM events WHERE slug = ?', [slug]);
+  }
+
+  /**
+   * Normalize event date for MySQL DATE column (YYYY-MM-DD string to avoid timezone issues)
+   */
+  private normalizeEventDate(eventDate: Date | string): string {
+    if (typeof eventDate === 'string') {
+      const trimmed = eventDate.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+      const d = new Date(trimmed);
+      if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+    const d = eventDate instanceof Date ? eventDate : new Date(eventDate);
+    return d.toISOString().slice(0, 10);
   }
 
   /**
@@ -93,7 +133,7 @@ export class EventsRepository {
     excerpt?: string;
     description?: string;
     location: string;
-    eventDate: Date;
+    eventDate: Date | string;
     eventTime?: string;
     imageUrl?: string;
     externalUrl?: string;
@@ -105,13 +145,14 @@ export class EventsRepository {
         image_url, external_url, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
+    const eventDateStr = this.normalizeEventDate(data.eventDate);
     const params = [
       data.title,
       data.slug,
       data.excerpt || null,
       data.description || null,
       data.location,
-      data.eventDate,
+      eventDateStr,
       data.eventTime || null,
       data.imageUrl || null,
       data.externalUrl || null,
@@ -144,7 +185,12 @@ export class EventsRepository {
         // Convert camelCase to snake_case for database
         const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         fields.push(`${dbKey} = ?`);
-        params.push(value as string | number | Date | null);
+        // Normalize event_date to YYYY-MM-DD for MySQL DATE
+        if (key === 'event_date' && (value instanceof Date || typeof value === 'string')) {
+          params.push(this.normalizeEventDate(value as Date | string));
+        } else {
+          params.push(value as string | number | Date | null);
+        }
       }
     });
 

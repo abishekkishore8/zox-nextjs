@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PostImage } from "@/components/PostImage";
 
 /**
  * AboutPage - Redesigned to match Step 2054 visual reference.
@@ -69,8 +70,14 @@ export default function AboutPage() {
                     {/* Madhur Mohan Malik */}
                     <div className="team-card" style={{ background: "#fff", padding: "40px", borderRadius: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.05)" }}>
                         <div style={{ display: "flex", gap: "20px", marginBottom: "20px", alignItems: "flex-start" }}>
-                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0 }}>
-                                <img src="https://s3.amazonaws.com/startupnews-media-2026/uploads/2026/02/Xiaomi-15-Ultra-camera-housing.jpeg" alt="Madhur Mohan Malik" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0, position: "relative", borderRadius: "4px" }}>
+                                <PostImage
+                                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces"
+                                    alt="Madhur Mohan Malik"
+                                    width={100}
+                                    height={70}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" }}
+                                />
                             </div>
                             <div>
                                 <h3 style={{ fontSize: "22px", fontWeight: 700, color: "#000", marginBottom: "5px" }}>Madhur Mohan Malik</h3>
@@ -86,8 +93,14 @@ export default function AboutPage() {
                     {/* Kapil Suri */}
                     <div className="team-card" style={{ background: "#fff", padding: "40px", borderRadius: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.05)" }}>
                         <div style={{ display: "flex", gap: "20px", marginBottom: "20px", alignItems: "flex-start" }}>
-                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0 }}>
-                                <img src="https://s3.amazonaws.com/startupnews-media-2026/uploads/2026/02/Xiaomi-15-Ultra-camera-housing.jpeg" alt="Kapil Suri" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0, position: "relative", borderRadius: "4px" }}>
+                                <PostImage
+                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=faces"
+                                    alt="Kapil Suri"
+                                    width={100}
+                                    height={70}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" }}
+                                />
                             </div>
                             <div>
                                 <h3 style={{ fontSize: "22px", fontWeight: 700, color: "#000", marginBottom: "5px" }}>Kapil Suri</h3>
@@ -103,8 +116,14 @@ export default function AboutPage() {
                     {/* Shounak Sengupta */}
                     <div className="team-card" style={{ background: "#fff", padding: "40px", borderRadius: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.05)" }}>
                         <div style={{ display: "flex", gap: "20px", marginBottom: "20px", alignItems: "flex-start" }}>
-                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0 }}>
-                                <img src="https://s3.amazonaws.com/startupnews-media-2026/uploads/2026/02/Xiaomi-15-Ultra-camera-housing.jpeg" alt="Shounak Sengupta" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0, position: "relative", borderRadius: "4px" }}>
+                                <PostImage
+                                    src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&h=200&fit=crop&crop=faces"
+                                    alt="Shounak Sengupta"
+                                    width={100}
+                                    height={70}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" }}
+                                />
                             </div>
                             <div>
                                 <h3 style={{ fontSize: "22px", fontWeight: 700, color: "#000", marginBottom: "5px" }}>Shounak Sengupta</h3>
@@ -120,8 +139,14 @@ export default function AboutPage() {
                     {/* Sreejit Kumar */}
                     <div className="team-card" style={{ background: "#fff", padding: "40px", borderRadius: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.05)" }}>
                         <div style={{ display: "flex", gap: "20px", marginBottom: "20px", alignItems: "flex-start" }}>
-                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0 }}>
-                                <img src="https://s3.amazonaws.com/startupnews-media-2026/uploads/2026/02/Xiaomi-15-Ultra-camera-housing.jpeg" alt="Sreejit Kumar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <div style={{ width: "100px", height: "70px", background: "#f0f0f0", overflow: "hidden", flexShrink: 0, position: "relative", borderRadius: "4px" }}>
+                                <PostImage
+                                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=faces"
+                                    alt="Sreejit Kumar"
+                                    width={100}
+                                    height={70}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "4px" }}
+                                />
                             </div>
                             <div>
                                 <h3 style={{ fontSize: "22px", fontWeight: 700, color: "#000", marginBottom: "5px" }}>Sreejit Kumar</h3>

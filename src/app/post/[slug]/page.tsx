@@ -1,54 +1,119 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import {
   getPostBySlug,
-  getAllPosts,
+  getMoreNewsPosts,
+  getMoreNewsSlugs,
   getRelatedPosts,
   getPrevNextPosts,
 } from "@/lib/data-adapter";
 import { FullArticle } from "@/components/FullArticle";
 import { InfiniteArticleLoader } from "@/components/InfiniteArticleLoader";
 
-// Limit static generation to top 100 most recent posts for better build performance
-// Remaining posts will be generated on-demand (ISR)
-export async function generateStaticParams() {
-  try {
-    const posts = await getAllPosts();
-    // Only pre-generate top 100 most recent posts
-    // This balances build time with initial page load performance
-    const topPosts = posts.slice(0, 100);
-    return topPosts.map((post) => ({ slug: post.slug }));
-  } catch (error) {
-    console.error('Error generating static params for posts:', error);
-    // Return empty array if database is not available during build
-    return [];
-  }
+// ISR: cache page for 60s so repeat views are instant
+export const revalidate = 60;
+
+const SITE_BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://startupnews.thebackend.in";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+  if (!post) return { title: "Post not found" };
+  const title = post.title || "StartupNews.fyi";
+  const description = (post.excerpt || "").slice(0, 160);
+  const image = post.image && !post.image.includes("unsplash.com/photo-1504711434969") ? post.image : undefined;
+  const postUrl = `${SITE_BASE}/post/${slug}`;
+  return {
+    title,
+    description: description || undefined,
+    alternates: {
+      canonical: postUrl,
+    },
+    openGraph: {
+      type: "article",
+      title,
+      description: description || undefined,
+      url: postUrl,
+      siteName: "StartupNews.fyi",
+      publishedTime: post.publishedAt || post.date,
+      section: post.category,
+      tags: post.tags,
+      ...(image && { images: [{ url: image, width: 1200, height: 630, alt: title }] }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: description || undefined,
+      ...(image && { images: [image] }),
+    },
+  };
 }
-
-// Enable ISR - pages not in generateStaticParams will be generated on-demand
-// and cached for 1 hour
-export const revalidate = 3600; // 1 hour
-
-// Allow dynamic params for posts not in generateStaticParams
-export const dynamicParams = true;
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const related = await getRelatedPosts(slug, post.categorySlug, 6);
-  const { prev, next } = await getPrevNextPosts(slug);
+  // Parallel fetch related, prev/next, and more-news slugs
+  const [related, { prev, next }, availableSlugs] = await Promise.all([
+    getRelatedPosts(slug, post.categorySlug, 6),
+    getPrevNextPosts(slug),
+    getMoreNewsSlugs([post.id]),
+  ]);
 
-  // Get all posts for "More News" functionality, excluding current
-  const availablePosts = (await getAllPosts()).filter((p) => p.slug !== slug);
+  // JSON-LD: NewsArticle schema
+  const image = post.image && !post.image.includes("unsplash.com/photo-1504711434969") ? post.image : undefined;
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: post.title,
+    description: (post.excerpt || "").slice(0, 200),
+    ...(image && { image: [image] }),
+    datePublished: post.publishedAt || post.date,
+    dateModified: post.publishedAt || post.date,
+    author: {
+      "@type": post.sourceName ? "Organization" : "Organization",
+      name: post.sourceAuthor || post.sourceName || "StartupNews.fyi",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "StartupNews.fyi",
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_BASE}/images/logos/startupnews-logo.png`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${SITE_BASE}/post/${slug}`,
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_BASE },
+      { "@type": "ListItem", position: 2, name: post.category, item: `${SITE_BASE}/category/${post.categorySlug}` },
+      { "@type": "ListItem", position: 3, name: post.title },
+    ],
+  };
 
   return (
     <div id="mvp-post-main-container">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Main post */}
       <FullArticle post={post} related={related} prev={prev} next={next} />
 
       {/* Loader for more full articles */}
-      <InfiniteArticleLoader initialPosts={[post]} availablePosts={availablePosts} />
+      <InfiniteArticleLoader initialPosts={[post]} availableSlugs={availableSlugs} />
     </div>
   );
 }

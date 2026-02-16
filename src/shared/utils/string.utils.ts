@@ -18,3 +18,4 @@ export function truncate(text: string, length: number, suffix = '...'): string {
   return text.substring(0, length).trim() + suffix;
 }
 
+/* Post titles are no longer truncated by word count; use CSS .post-heading-max-3-lines for max 3 lines. */
