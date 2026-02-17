@@ -66,6 +66,35 @@ export function extractImageUrlsFromHtml(html: string, baseUrl: string): string[
   return urls;
 }
 
+/** URL path/query segments that usually indicate a logo or small branding image, not the article image */
+const LOGO_LIKE_SEGMENTS = /(?:^|\/|_|-)(?:logo|logotype|icon|favicon|avatar|badge|brand|watermark|sponsor|partner|ad_|banner_small)(?:\d*)(?:\.|$|\/|_|-)/i;
+
+/**
+ * Return true if the URL looks like a logo/small branding image rather than article art.
+ */
+export function isLikelyLogoUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return true;
+  try {
+    const u = new URL(url);
+    const pathQuery = `${u.pathname}${u.search}`;
+    return LOGO_LIKE_SEGMENTS.test(pathQuery);
+  } catch {
+    return LOGO_LIKE_SEGMENTS.test(url);
+  }
+}
+
+/**
+ * From a list of image URLs (e.g. from article content), return the first that is unlikely to be a logo.
+ * Use this to pick a featured image instead of blindly using the first image.
+ */
+export function selectBestContentImageUrl(urls: string[]): string | null {
+  if (!urls?.length) return null;
+  for (const url of urls) {
+    if (url && !isLikelyLogoUrl(url)) return url;
+  }
+  return null;
+}
+
 /**
  * Extract best primary image URL from page HTML metadata (og/twitter/link image_src).
  */

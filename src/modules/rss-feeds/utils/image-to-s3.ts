@@ -4,6 +4,12 @@
  */
 
 import { S3Client, PutObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { imageSize } from 'image-size';
+
+/** Minimum bytes for an image to be used as featured (avoids 1x1 placeholders / tracking pixels). */
+const MIN_FEATURED_BYTES = 2048;
+/** Minimum width/height in pixels for featured image (avoids logos and tiny icons). */
+const MIN_FEATURED_DIMENSION = 200;
 
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const S3_BUCKET = process.env.S3_BUCKET || 'startupnews-media-2026';
@@ -71,7 +77,7 @@ const CONTENT_TYPES: Record<string, string> = {
   svg: 'image/svg+xml',
 };
 
-function getContentType(url: string): string {
+export function getContentType(url: string): string {
   const ext = (url.split('.').pop()?.split(/[?#]/)[0] || '').toLowerCase();
   return CONTENT_TYPES[ext] || 'image/jpeg';
 }
@@ -126,6 +132,22 @@ export async function downloadImage(url: string): Promise<Buffer | null> {
     return null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Return true if the image buffer is suitable as a featured image (not a placeholder/tiny/white).
+ * Rejects small files and dimensions to avoid 1x1 pixels, tracking GIFs, and logos.
+ */
+export function isValidFeaturedImage(buffer: Buffer): boolean {
+  if (!buffer || buffer.length < MIN_FEATURED_BYTES) return false;
+  try {
+    const dims = imageSize(buffer);
+    const w = dims?.width ?? 0;
+    const h = dims?.height ?? 0;
+    return w >= MIN_FEATURED_DIMENSION && h >= MIN_FEATURED_DIMENSION;
+  } catch {
+    return false;
   }
 }
 
@@ -205,6 +227,26 @@ export async function downloadAndUploadToS3(
 ): Promise<string | null> {
   const buf = await downloadImage(imageUrl);
   if (!buf) return null;
+  const key = s3KeyForRssImage(uniqueId, imageUrl);
+  const contentType = getContentType(imageUrl);
+  try {
+    return await uploadImageToS3(key, buf, contentType);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Download image, validate it is suitable for featured (size + dimensions), then upload to S3.
+ * Returns S3 URL or null if download fails, image is too small/placeholder, or upload fails.
+ * Use this for featured image candidates to avoid white/tiny/placeholder images.
+ */
+export async function downloadAndUploadFeaturedToS3(
+  imageUrl: string,
+  uniqueId: string
+): Promise<string | null> {
+  const buf = await downloadImage(imageUrl);
+  if (!buf || !isValidFeaturedImage(buf)) return null;
   const key = s3KeyForRssImage(uniqueId, imageUrl);
   const contentType = getContentType(imageUrl);
   try {

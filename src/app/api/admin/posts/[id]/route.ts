@@ -236,12 +236,16 @@ export async function PUT(
       data: post,
     });
   } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Failed to update post';
+    if (msg.includes('Featured image is required to publish')) {
+      return NextResponse.json(
+        { success: false, error: msg },
+        { status: 400 }
+      );
+    }
     console.error('Error updating post:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to update post',
-      },
+      { success: false, error: msg },
       { status: 500 }
     );
   }

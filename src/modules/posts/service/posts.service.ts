@@ -86,6 +86,13 @@ export class PostsService {
   }
 
   /**
+   * Get post by id (for admin validation).
+   */
+  async getPostById(id: number): Promise<PostEntity | null> {
+    return this.repository.findById(id);
+  }
+
+  /**
    * Get post by slug
    */
   async getPostBySlug(slug: string): Promise<PostEntity | null> {
@@ -300,12 +307,12 @@ export class PostsService {
     if (data.status !== undefined) updateData.status = data.status;
     if (data.featured !== undefined) updateData.featured = data.featured;
 
-    // Do not allow publishing if post has no body or no image; force draft
+    // Require image to publish; reject instead of forcing draft
     const effectiveContent = updateData.content !== undefined ? updateData.content : existingPost.content;
     const effectiveFeatured = updateData.featured_image_url !== undefined ? updateData.featured_image_url : existingPost.featured_image_url;
     const wantsPublish = data.status === 'published';
     if (wantsPublish && !canPublishPost(effectiveContent, effectiveFeatured)) {
-      updateData.status = 'draft';
+      throw new Error('Featured image is required to publish. Add an image or save as draft.');
     }
 
     // Handle published_at based on status

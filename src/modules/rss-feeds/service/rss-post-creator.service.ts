@@ -4,8 +4,11 @@ import { PostsRepository } from '@/modules/posts/repository/posts.repository';
 import { slugify } from '@/shared/utils/string.utils';
 import { invalidatePostsListCache } from '@/shared/cache/redis.client';
 import {
+  downloadAndUploadFeaturedToS3,
   downloadAndUploadToS3,
   downloadImage,
+  getContentType,
+  isValidFeaturedImage,
   normalizeSourceImageUrl,
   s3KeyForRssImage,
   uploadImageToS3,
@@ -14,6 +17,8 @@ import {
   extractArticleHtml,
   extractImageUrlsFromHtml,
   extractPrimaryImageFromHtml,
+  isLikelyLogoUrl,
+  selectBestContentImageUrl,
 } from '../utils/content-extract';
 
 const ARTICLE_FETCH_TIMEOUT_MS = 15000;
@@ -71,41 +76,36 @@ export class RssPostCreatorService {
     }
     if (!articleHtml || !articleHtml.trim()) articleHtml = item.description || item.content || '<p>No content.</p>';
 
-    // 2) Extract image URLs and upload to S3, build replacements
+    // 2) Extract image URLs and upload to S3, build replacements; track which are valid for featured (not tiny/placeholder).
     const imageUrls = extractImageUrlsFromHtml(articleHtml, baseUrl);
     const urlToS3 = new Map<string, string>();
+    const validFeaturedUrls = new Set<string>();
     const uniqueBase = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     for (let i = 0; i < imageUrls.length; i++) {
-      const s3Url = await downloadAndUploadToS3(imageUrls[i], `${uniqueBase}-${i}`);
-      if (s3Url) urlToS3.set(imageUrls[i], s3Url);
+      const url = imageUrls[i];
+      const buf = await downloadImage(url);
+      if (!buf) continue;
+      const validForFeatured = isValidFeaturedImage(buf);
+      const key = s3KeyForRssImage(`${uniqueBase}-${i}`, url);
+      const contentType = getContentType(url);
+      try {
+        const s3Url = await uploadImageToS3(key, buf, contentType);
+        urlToS3.set(url, s3Url);
+        if (validForFeatured) validFeaturedUrls.add(url);
+      } catch {
+        // skip
+      }
     }
     let matchedContent = articleHtml;
     for (const [oldUrl, newUrl] of urlToS3) {
       matchedContent = matchedContent.split(oldUrl).join(newUrl);
     }
 
-    // 3) Optional: featured image from first image or RSS image
+    // 3) Featured image: prefer OG/Twitter meta (actual article image), then first non-logo content image; avoid source logos.
     let featuredImageUrl: string | null = null;
-    if (imageUrls.length > 0 && urlToS3.has(imageUrls[0])) {
-      featuredImageUrl = urlToS3.get(imageUrls[0])!;
-    } else if (item.imageUrl) {
-      const normalizedItemImage = normalizeSourceImageUrl(item.imageUrl);
-      const buf = await downloadImage(normalizedItemImage);
-      if (buf) {
-        const key = s3KeyForRssImage(`${uniqueBase}-feat`, normalizedItemImage);
-        const ext = (normalizedItemImage.split('.').pop()?.split(/[?#]/)[0] || 'jpg').toLowerCase();
-        const contentType = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' }[ext] || 'image/jpeg';
-        try {
-          featuredImageUrl = await uploadImageToS3(key, buf, contentType);
-        } catch {
-          // ignore
-        }
-      }
-    }
 
-    // 3b) Fallback to OG/Twitter image from fetched page when RSS item/image tags had nothing usable.
-    // NEW: If we haven't fetched the page yet (because RSS content was long enough), fetch it now to check for metadata images.
-    if (!featuredImageUrl && !fetchedPageHtml && link) {
+    // 3a) Fetch page if we don't have it yet, so we can try og:image first (usually the real article image, not logo).
+    if (!fetchedPageHtml && link) {
       try {
         const res = await fetch(link, {
           headers: {
@@ -122,18 +122,36 @@ export class RssPostCreatorService {
       }
     }
 
-    if (!featuredImageUrl && fetchedPageHtml && baseUrl) {
+    if (fetchedPageHtml && baseUrl) {
       const primaryMetaImage = extractPrimaryImageFromHtml(fetchedPageHtml, baseUrl);
-      if (primaryMetaImage) {
-        const s3Meta = await downloadAndUploadToS3(primaryMetaImage, `${uniqueBase}-meta`);
+      if (primaryMetaImage && !isLikelyLogoUrl(primaryMetaImage)) {
+        const s3Meta = await downloadAndUploadFeaturedToS3(primaryMetaImage, `${uniqueBase}-meta`);
         if (s3Meta) featuredImageUrl = s3Meta;
       }
     }
 
-    // 3c) If first content image already points to S3, use it directly as featured.
+    // 3b) Prefer first non-logo image from article content that is valid for featured (not tiny/white/placeholder).
+    if (!featuredImageUrl && imageUrls.length > 0) {
+      const bestContentUrl = selectBestContentImageUrl(imageUrls) ?? imageUrls[0];
+      if (validFeaturedUrls.has(bestContentUrl) && urlToS3.has(bestContentUrl)) {
+        featuredImageUrl = urlToS3.get(bestContentUrl)!;
+      } else {
+        const firstValid = imageUrls.find((u) => validFeaturedUrls.has(u) && urlToS3.has(u));
+        if (firstValid) featuredImageUrl = urlToS3.get(firstValid)!;
+      }
+    }
     if (!featuredImageUrl && imageUrls.length > 0) {
       const first = normalizeSourceImageUrl(imageUrls[0]);
       if (this.isOurS3Url(first)) featuredImageUrl = first;
+    }
+
+    // 3c) RSS item image (enclosure / first img in feed) only if not logo and passes size/dimension validation.
+    if (!featuredImageUrl && item.imageUrl && !isLikelyLogoUrl(item.imageUrl)) {
+      const s3Feat = await downloadAndUploadFeaturedToS3(
+        normalizeSourceImageUrl(item.imageUrl),
+        `${uniqueBase}-feat`
+      );
+      if (s3Feat) featuredImageUrl = s3Feat;
     }
 
     // Never use Unsplash or other default URLs as thumbnail – treat as no image (post will be draft).

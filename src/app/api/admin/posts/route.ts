@@ -282,6 +282,18 @@ export async function POST(request: NextRequest) {
       featuredImageSmallUrl = featuredImageUrl;
     }
 
+    const status = body.status === 'archived' ? 'archived' : body.status === 'published' ? 'published' : 'draft';
+    // Require featured image for publishing; news with no image will not be posted as published
+    const hasValidFeatured = Boolean(
+      featuredImageUrl && String(featuredImageUrl).trim() && !String(featuredImageUrl).trim().startsWith('https://images.unsplash.com/')
+    );
+    if (status === 'published' && !hasValidFeatured) {
+      return NextResponse.json(
+        { success: false, error: 'Featured image is required to publish. Add an image or save as draft.' },
+        { status: 400 }
+      );
+    }
+
     // Process images in content: extract, upload to S3, replace
     // This mirrors RSS behavior so manual posts also get their images hosted on our S3
     let processedContent = String(body.content || '');
@@ -316,8 +328,6 @@ export async function POST(request: NextRequest) {
         // Continue with original content
       }
     }
-
-    const status = body.status === 'archived' ? 'archived' : body.status === 'published' ? 'published' : 'draft';
 
     const entity = await postsService.createPost({
       title: String(body.title),

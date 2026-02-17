@@ -57,22 +57,6 @@ export { EVENTS_REGION_ORDER };
 // Default event image
 const DEFAULT_EVENT_IMAGE = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80";
 
-/**
- * Fallback startup events when DB has none (previous Docker/static data).
- * Shown until events are added via admin or seed.
- */
-const FALLBACK_STARTUP_EVENTS: StartupEvent[] = [
-  { id: "f1", location: "Bengaluru", date: "15 March 2026", title: "Startup Weekend Bengaluru", url: "https://startupnews.thebackend.in/startup-events/startup-weekend-bengaluru/", excerpt: "54-hour startup building event.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f2", location: "Bengaluru", date: "22 April 2026", title: "TechSparks Bengaluru", url: "https://startupnews.thebackend.in/startup-events/techsparks-bengaluru/", excerpt: "India's largest startup-tech conference.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f3", location: "Delhi NCR", date: "10 March 2026", title: "Delhi Startup Summit", url: "https://startupnews.thebackend.in/startup-events/delhi-startup-summit/", excerpt: "Connect with investors and founders.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f4", location: "Mumbai", date: "5 April 2026", title: "Mumbai Tech Meetup", url: "https://startupnews.thebackend.in/startup-events/mumbai-tech-meetup/", excerpt: "Monthly tech and startup meetup.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f5", location: "Hyderabad", date: "18 March 2026", title: "Hyderabad Innovation Hub", url: "https://startupnews.thebackend.in/startup-events/hyderabad-innovation-hub/", excerpt: "Innovation and startup showcase.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f6", location: "Dubai", date: "25 March 2026", title: "GITEX Dubai", url: "https://startupnews.thebackend.in/startup-events/gitex-dubai/", excerpt: "Global tech and startup exhibition.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f7", location: "Cohort", date: "1 April 2026", title: "Cohort Demo Day", url: "https://startupnews.thebackend.in/startup-events/cohort-demo-day/", excerpt: "Cohort program demo day.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f8", location: "International Events", date: "12 May 2026", title: "Web Summit", url: "https://startupnews.thebackend.in/startup-events/web-summit/", excerpt: "International tech conference.", image: DEFAULT_EVENT_IMAGE },
-  { id: "f9", location: "Other Cities", date: "20 March 2026", title: "Startup India Roadshow", url: "https://startupnews.thebackend.in/startup-events/startup-india-roadshow/", excerpt: "Startup India regional event.", image: DEFAULT_EVENT_IMAGE },
-];
-
 export function getEventImage(event: StartupEvent): string {
   return event.image || DEFAULT_EVENT_IMAGE;
 }
@@ -553,7 +537,7 @@ export async function getVideoPosts(limit = 10): Promise<Post[]> {
 }
 
 /**
- * Events Functions - DB first, fallback to previous (Docker/static) event data when DB has none
+ * Events by region from database only (no fallback). Matches admin: only real events.
  */
 export async function getEventsByRegion(): Promise<Record<string, StartupEvent[]>> {
   const cacheKey = 'events:by-region:upcoming';
@@ -563,44 +547,32 @@ export async function getEventsByRegion(): Promise<Record<string, StartupEvent[]
   try {
     const entities = await eventsService.getAllEvents({ status: 'upcoming' });
     const eventsByRegion: Record<string, StartupEvent[]> = {};
-
-    if (entities.length > 0) {
-      for (const region of EVENTS_REGION_ORDER) {
-        eventsByRegion[region] = entities
-          .filter((e) => e.location === region)
-          .map((e) => entityToEvent(e));
-      }
-      await setCache(cacheKey, eventsByRegion, 300); // Cache for 5 minutes
-      return eventsByRegion;
-    }
-
-    // No events in DB: use fallback (previous Docker/static data)
     for (const region of EVENTS_REGION_ORDER) {
-      eventsByRegion[region] = FALLBACK_STARTUP_EVENTS.filter((e) => e.location === region);
+      eventsByRegion[region] = entities
+        .filter((e) => e.location === region)
+        .map((e) => entityToEvent(e));
     }
-    await setCache(cacheKey, eventsByRegion, 300); // Cache for 5 minutes
+    await setCache(cacheKey, eventsByRegion, 300);
     return eventsByRegion;
   } catch (error) {
     console.error('Error fetching events by region:', error);
-    const fallback = Object.fromEntries(EVENTS_REGION_ORDER.map((r) => [r, FALLBACK_STARTUP_EVENTS.filter((e) => e.location === r)]));
-    await setCache(cacheKey, fallback, 60); // Short cache for errors
-    return fallback;
+    const empty = Object.fromEntries(EVENTS_REGION_ORDER.map((r) => [r, []]));
+    await setCache(cacheKey, empty, 60);
+    return empty;
   }
 }
 
 /**
- * Get all startup events from database; if none, return previous (Docker/static) event data
+ * Get all startup events from database only (no fallback).
+ * Matches admin events: if admin shows no events, homepage sidebar shows none too.
  */
 export async function getStartupEvents(): Promise<StartupEvent[]> {
   try {
     const entities = await eventsService.getAllEvents({ status: 'upcoming' });
-    if (entities.length > 0) {
-      return entities.map((e) => entityToEvent(e));
-    }
-    return FALLBACK_STARTUP_EVENTS;
+    return entities.map((e) => entityToEvent(e));
   } catch (error) {
     console.error('Error fetching startup events:', error);
-    return FALLBACK_STARTUP_EVENTS;
+    return [];
   }
 }
 
